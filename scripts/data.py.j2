@@ -1,0 +1,283 @@
+{% macro create_const(name, prefix) -%}
+{{prefix}}{{ name }}: Literal["{{ name | lower }}"] = "{{ name | lower }}"
+{%- endmacro -%}
+from typing import Literal, TypedDict
+
+from ssh_key_mgr.putty import (
+    PuttyFileV3,
+    EncryptedBytes,
+{%- for name in Putty.Encryption %}
+    DecryptionParams_{{ name }},
+    EncryptionParams_{{ name }},
+{%- endfor %}
+{%- for name in Putty.KeyType %}
+    PuttyKey{{ name }},
+    PuttyPrivateKey{{ name }},
+    PuttyPublicKey{{ name }},
+{%- endfor %}
+)
+from ssh_key_mgr.putty.checksum import Mac, MacKey
+
+
+from ssh_key_mgr.putty.encryption.aes.base import IV, CipherKey
+from ssh_key_mgr.putty.encryption.argon.base import Argon2Params, ArgonID, MemoryCost, Parallelism, Salt, TimeCost
+from ssh_key_mgr.secretstr import SecretBytes
+
+PASSPHRASE_ENC = SecretBytes(b"correct horse battery staple")
+PASSPHRASE_NONE = None
+PASSPHRASE_NONE_ALT = SecretBytes(b"")
+
+class AesTestVectorT(TypedDict):
+    CipherKey: CipherKey
+    IV: IV
+    Decrypted: bytes
+    Encrypted: EncryptedBytes
+
+PUTTY_AES: dict[str, AesTestVectorT] = {
+{%- for Name, Value in AES.items() %}
+    "{{ Name }}": {
+        "CipherKey": {{ Value.CipherKey }},
+        "IV": {{ Value.IV }},
+        "Decrypted": {{ Value.Decrypted }},
+        "Encrypted": {{ Value.Encrypted }},
+    },
+{%- endfor %}
+}
+
+
+class PUTTY_ARGON_DICT(TypedDict):
+    Params: Argon2Params
+    Passphrase: SecretBytes
+    Hash: bytes
+
+
+PUTTY_ARGON: dict[str, PUTTY_ARGON_DICT] = {
+{%- for Name, Value in Argon.items() %}
+    "{{ Name }}": {
+        "Params": Argon2Params(
+            type=ArgonID.ID,
+            memory_cost=MemoryCost(8192),
+            time_cost=TimeCost(21),
+            parallelism=Parallelism(1),
+            salt={{ Value.Params.Salt }},
+            hash_length={{ Value.HashLength }},
+        ),
+        "Passphrase": {{ Value.Passphrase }},
+        "Hash": {{ Value.Hash }},
+    },
+{%- endfor %}
+}
+
+{% for Name in Keys.keys() -%}
+{{ create_const(Name, '') }}
+{% endfor %}
+KEY_NAMES = ({{ Keys.keys() | join(", ") }})
+KEY_NAMES_T = Literal["{{ Keys.keys() | map('lower') | join('\", \"') }}"]
+
+PUBLIC_KEY_WIRES = {
+{%- for Key in Keys.values() %}
+    {{ Key.Name }}: {{ Key.PublicWire }},
+{%- endfor %}
+}
+
+PRIVATE_KEY_WIRES = {
+{%- for Key in Keys.values() %}
+    {{ Key.Name }}: {{ Key.PrivateWire }},
+{%- endfor %}
+}
+
+# region Putty
+
+{% for name in Putty.Encryption %}{{ create_const(name, 'ENC_') }}
+{% endfor %}
+PUTTY_ENC_NAMES = (ENC_{{ Putty.Encryption | join(", ENC_") }})
+PUTTY_ENC_NAMES_T = Literal["{{ Putty.Encryption | map('lower') | join('\", \"') }}"]
+
+PASSPHRASE = {
+{% for name, value in Passphrase.Correct.items() %}
+    ENC_{{name}}: {{value}},
+{%- endfor %}
+}
+
+INVALID_PASSPHRASE = {
+{% for name, value in Passphrase.Invalid.items() %}
+    ENC_{{name}}: {{value}},
+{%- endfor %}
+}
+
+INCORRECT_PASSPHRASE = {
+{% for name, value in Passphrase.Incorrect.items() %}
+    ENC_{{name}}: {{value}},
+{%- endfor %}
+}
+
+PASSPHRASES = {
+{%- for Name, Key in Keys.items() %}
+    {{ Name }}: {
+{% for enc_name, Enc in Key.Putty.items() %}
+        ENC_{{ enc_name }}: {{ Enc.Passphrase }},
+{%- endfor %}
+    },
+{%- endfor %}
+}
+
+class PUTTY_PUBLIC_KEYS_DICT(TypedDict):
+{%- for Key in Keys.values() %}
+    {{ Key.Name | lower }}: PuttyPublicKey{{ Key.PuttyKeyType }}
+{%- endfor %}
+
+PUTTY_PUBLIC_KEYS: PUTTY_PUBLIC_KEYS_DICT = {
+{%- for Key in Keys.values() %}
+    {{ Key.Name }}: PuttyPublicKey{{ Key.PuttyKeyType }}(
+{%- for field, value in Key.Data.Public.items() %}
+        {{ field }}={{ value }},
+{%- endfor %}
+    ),
+{%- endfor %}
+}
+
+class PUTTY_PRIVATE_KEYS_DICT(TypedDict):
+{%- for Key in Keys.values() %}
+    {{ Key.Name | lower }}: PuttyPrivateKey{{ Key.PuttyKeyType }}
+{%- endfor %}
+
+PUTTY_PRIVATE_KEYS: PUTTY_PRIVATE_KEYS_DICT = {
+{%- for Key in Keys.values() %}
+    {{ Key.Name }}: PuttyPrivateKey{{ Key.PuttyKeyType }}(
+{%- for field, value in Key.Data.Private.items() %}
+        {{ field }}={{ value }},
+{%- endfor %}
+    ),
+{%- endfor %}
+}
+
+PUTTY_KEY = {
+{%- for Name, Key in Keys.items() %}
+    {{ Name }}: PuttyKey{{ Key.PuttyKeyType }}(
+        public=PuttyPublicKey{{ Key.PuttyKeyType }}(
+{%- for field, value in Key.Data.Public.items() %}
+        {{ field }}={{ value }},
+{%- endfor %}
+        ),
+        private=PuttyPrivateKey{{ Key.PuttyKeyType }}(
+{%- for field, value in Key.Data.Private.items() %}
+        {{ field }}={{ value }},
+{%- endfor %}
+        ),
+        comment="{{ Key.Comment }}",
+    ),
+{%- endfor %}
+}
+
+
+PUTTY_ENCRYPTED = {
+{% for enc_name in Putty.Encryption %}
+    ENC_{{ enc_name }}: {
+{%- for Key in Keys.values() %}
+        {{ Key.Name }}: {{ Key.Putty[enc_name].Encrypted }},
+{%- endfor %}
+    },
+{% endfor %}
+}
+
+PUTTY_DECRYPTED = {
+{% for enc_name in Putty.Encryption %}
+    ENC_{{ enc_name }}: {
+{%- for Key in Keys.values() %}
+        {{ Key.Name }}: {{ Key.Putty[enc_name].Decrypted }},
+{%- endfor %}
+    },
+{% endfor %}
+}
+
+PUTTY_MAC_KEY = {
+{% for enc_name in Putty.Encryption %}
+    ENC_{{ enc_name }}: {
+{%- for Key in Keys.values() %}
+        {{ Key.Name }}: {{ Key.Putty[enc_name].MacKey }},
+{%- endfor %}
+    },
+{% endfor %}
+}
+
+PUTTY_MAC = {
+{% for enc_name in Putty.Encryption %}
+    ENC_{{ enc_name }}: {
+{%- for Key in Keys.values() %}
+        {{ Key.Name }}: {{ Key.Putty[enc_name].Mac }},
+{%- endfor %}
+    },
+{% endfor %}
+}
+
+class PUTTY_DECRYPTION_PARAMS_DICT(TypedDict):
+{%- for name in Putty.Encryption %}
+    {{ name | lower }}: dict[KEY_NAMES_T, DecryptionParams_{{ name | upper }}]
+{%- endfor %}
+
+PUTTY_DECRYPTION_PARAMS: PUTTY_DECRYPTION_PARAMS_DICT = {
+{%- for name in Putty.Encryption %}
+    ENC_{{ name }}: {
+{%- for Key in Keys.values() %}
+        {{ Key.Name }}: DecryptionParams_{{ name }}(
+{%- for field, value in Key.Putty[name].DecryptParams.items() %}
+        {{ field }}={{ value }},
+{%- endfor %}
+        ),
+{%- endfor %}
+    },
+{%- endfor %}
+}
+
+class PUTTY_ENCRYPTION_PARAMS_DICT(TypedDict):
+{%- for name in Putty.Encryption %}
+    {{ name | lower }}: dict[KEY_NAMES_T, EncryptionParams_{{ name | upper }}]
+{%- endfor %}
+
+PUTTY_ENCRYPTION_PARAMS: PUTTY_ENCRYPTION_PARAMS_DICT = {
+{%- for name in Putty.Encryption %}
+    ENC_{{ name }}: {
+{%- for Key in Keys.values() %}
+        {{ Key.Name }}: EncryptionParams_{{ name }}(
+{%- for field, value in Key.Putty[name].EncryptParams.items() %}
+        {{ field }}={{ value }},
+{%- endfor %}
+        ),
+{%- endfor %}
+    },
+{%- endfor %}
+}
+
+
+PUTTY_FILE_V3 = {
+{%- for enc_name in Putty.Encryption %}
+    ENC_{{ enc_name }}: {
+{%- for Key in Keys.values() %}
+        {{ Key.Name }}: PuttyFileV3(
+            key_type="{{ Putty.KeyType[Key.PuttyKeyType].Type }}",
+            comment="{{ Key.Comment }}",
+            public_lines={{ Key.PublicWire }},
+            decryption_params=DecryptionParams_{{ enc_name }}(
+{%- for field, value in Key.Putty[enc_name].DecryptParams.items() %}
+            {{ field }}={{ value }},
+{%- endfor %}
+            ),
+            private_lines={{ Key.Putty[enc_name].Encrypted }},
+            mac={{ Key.Putty[enc_name].Mac }},
+        ),
+{%- endfor %}
+    },
+{%- endfor %}
+}
+
+PUTTY_PPK_V3 = {
+{%- for enc_name in Putty.Encryption %}
+    ENC_{{ enc_name }}: {
+{%- for Key in Keys.values() %}
+        {{ Key.Name }}: b"""{{ Key.Putty[enc_name].PPK }}""",
+{%- endfor %}
+    },
+{%- endfor %}
+}
+
+# endregion

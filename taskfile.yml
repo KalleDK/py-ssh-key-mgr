@@ -1,0 +1,68 @@
+version: '3'
+
+tasks:
+  generate_keys:
+    vars:
+      filename: data
+    cmds:
+      - uv run python ./scripts/generate_test_data.py --out ./keys | tee ./scripts/{{.filename}}.yaml
+  generate_data:
+    vars:
+      filename: data
+    dir: ./scripts/
+    cmds:
+      - jinja2 {{.filename}}.py.j2 {{.filename}}.yaml | tee {{.filename}}.py
+      - ruff check --select I --fix {{.file}}
+      - ruff format {{.file}}
+  install_test_data:
+    vars:
+      filename: data
+    cmds:
+      - cp ./scripts/{{.filename}}.py ./tests/putty/{{.filename}}.py
+  testdata:
+    cmds:
+      - task: generate_keys
+      - task: generate_data
+      - task: install_test_data
+  update_skel:
+    cmds:
+      - copier update --trust --defaults
+      - git --no-pager diff
+  test:
+    cmds:
+      - uv run pytest -v
+  sync:
+    cmds:
+      - uv sync --group test --group stubs
+  update:
+    cmds:
+      - uv sync --group test --extra crypto --extra cli  -U -n
+  lint:
+    cmds:
+      - uv run ruff check
+  format:
+    cmds:
+      - uv run ruff format
+  precommit:
+    cmds:
+      - uv run pre-commit run --all-files
+  install-precommit:
+    cmds:
+      - uv run pre-commit install
+  bump:
+    vars:
+      PART: '{{.PART | default "build"}}'
+    cmds:
+      - uv run bump-my-version bump {{ .PART }}
+  devrel:
+    cmds:
+      - git add .
+      - if git commit --dry-run --short; then git commit -m "devrel"; else echo nothing changed; fi
+      - task: bump
+      - git push --follow-tags
+  release:
+    cmds:
+      - task: bump
+        vars:
+          PART: 'patch'
+      - git push --follow-tags
