@@ -286,10 +286,20 @@ crypto = [
 ]
 
 [package.dev-dependencies]
+cli = [
+    { name = "rich" },
+]
+crypto = [
+    { name = "bcrypt" },
+    { name = "pycryptodome" },
+]
 test = [
+    { name = "bcrypt" },
     { name = "coverage" },
+    { name = "pycryptodome" },
     { name = "pytest" },
     { name = "pytest-cov" },
+    { name = "rich" },
 ]
 
 [package.metadata]
@@ -302,11 +312,19 @@ requires-dist = [
 provides-extras = ["cli", "crypto"]
 
 [package.metadata.requires-dev]
+cli = [{ name = "rich", specifier = ">=14.1.0" }]
+crypto = [
+    { name = "bcrypt", specifier = ">=5.0.0" },
+    { name = "pycryptodome", specifier = ">=3.23.0" },
+]
 stubs = []
 test = [
+    { name = "bcrypt", specifier = ">=5.0.0" },
     { name = "coverage", specifier = ">=7.10.7" },
+    { name = "pycryptodome", specifier = ">=3.23.0" },
     { name = "pytest", specifier = ">=8.4.2" },
     { name = "pytest-cov", specifier = ">=7.0.0" },
+    { name = "rich", specifier = ">=14.1.0" },
 ]
 
 [[package]]
