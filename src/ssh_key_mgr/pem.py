@@ -40,18 +40,19 @@ def unmarshal(data: bytes) -> list[PEMBlock]:
     return list(iter(data))
 
 
-def to_base64_lines(data: bytes) -> list[bytes]:
+def to_base64_lines(data: bytes, width: int = 64) -> list[bytes]:
     raw = base64.b64encode(data)
-    lines = [raw[i : i + 64] for i in range(0, len(raw), 64)]
+    lines = [raw[i : i + width] for i in range(0, len(raw), width)]
     return lines
 
 
-def marshal(block: PEMBlock, *blocks: PEMBlock) -> bytes:
+def marshal(block: PEMBlock, *blocks: PEMBlock, width: int = 64, use_spaces: bool = True) -> bytes:
     blocks = (block,) + blocks
     lines: list[bytes] = []
+    space = " " if use_spaces else "-"
     for block in blocks:
-        lines.append(f"---- BEGIN {block.header} ----".encode("utf-8"))
-        lines.extend(to_base64_lines(block.data))
-        lines.append(f"---- END {block.footer} ----".encode("utf-8"))
+        lines.append(f"----{space}BEGIN {block.header}{space}----".encode("utf-8"))
+        lines.extend(to_base64_lines(block.data, width=width))
+        lines.append(f"----{space}END {block.footer}{space}----".encode("utf-8"))
         lines.append(b"")
     return b"\n".join(lines)

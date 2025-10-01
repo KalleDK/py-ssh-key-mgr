@@ -23,6 +23,15 @@ Homepage = "https://github.com/KalleDK/py-ssh-key-mgr"
 Documentation = "https://github.com/KalleDK/py-ssh-key-mgr"
 Repository = "https://github.com/KalleDK/py-ssh-key-mgr.git"
 
+[project.optional-dependencies]
+cli = [
+    "rich>=14.1.0",
+]
+crypto = [
+    "bcrypt>=5.0.0",
+    "pycryptodome>=3.23.0",
+]
+
 [dependency-groups]
 test = [
     "coverage>=7.10.7",
@@ -47,3 +56,15 @@ pythonVersion = "3.13"
 [tool.ruff]
 line-length = 120
 target-version = "py313"
+
+[tool.coverage.run]
+omit = ["tests/*"]
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+    "--cov=ssh_key_mgr",
+    "--cov-report=html",
+    "--cov-report=term-missing",
+    "--cov-report=xml"
+]

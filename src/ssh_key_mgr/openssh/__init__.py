@@ -1,91 +1,89 @@
-import dataclasses
-from ctypes import c_uint32
-from typing import Annotated, ClassVar
+import os
+import struct
+from typing import Annotated, ClassVar, Self
 
-import ssh_proto_types
-from ssh_proto_types import Packet as SSHPacket
+import ssh_proto_types as spt
 
-# Magic Key Format:
-b"openssh-key-v1\x00"
+from ssh_key_mgr import pem
+from ssh_key_mgr.openssh import encryption as enc
+from ssh_key_mgr.openssh.aes import EncryptedBytes
+from ssh_key_mgr.openssh.bcrypt import Rounds, Salt
+from ssh_key_mgr.secretstr import SecretBytes
 
-# Header Fields
-# CipherName
-b"\x00\x00\x00\x04"
-b"none"
-# KDFName
-b"\x00\x00\x00\x04"
-b"none"
-# KDFOptions
-b"\x00\x00\x00\x00"
-# Number of keys (1)
-b"\x00\x00\x00\x01"
-# Public Key
-b"\x00\x00\x003"  # 51
-b"\x00\x00\x00\x0bssh-ed25519\x00\x00\x00 V,4j\xc8\xa8\x86\xea\xa5w\xcd\x8f}a0\x98\xfd+\x98f\x03\x1f\xb8B\x0f\xae\x8b03\x07\x9b\x01"
-# Private Key Block
-b"\x00\x00\x00\xa0"  # 160
-b"%\x92u\xae%\x92u\xae\x00\x00\x00\x0bssh-ed25519\x00\x00\x00 V,4j\xc8\xa8\x86\xea\xa5w\xcd\x8f}a0\x98\xfd+\x98f\x03\x1f\xb8B\x0f\xae\x8b03\x07\x9b\x01\x00\x00\x00@\x8e\x03~\xac\xf0l\xba\xdd@\x91\xbd#@$\xed\xdbj\xed\xc1\xc4\xe4\xf7\x84\x02\xf0\x9f\x8b\xd0\xd8\xba\xbf(V,4j\xc8\xa8\x86\xea\xa5w\xcd\x8f}a0\x98\xfd+\x98f\x03\x1f\xb8B\x0f\xae\x8b03\x07\x9b\x01\x00\x00\x00\x12eddsa-key-20250924\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b"
+PEM_HEADER = "OPENSSH PRIVATE KEY"
+
+AES256_CTR = "aes256-ctr"
+BCRYPT = "bcrypt"
+NONE = "none"
+
+SSH_ED25519 = "ssh-ed25519"
+SSH_RSA = "ssh-rsa"
 
 MAGIC_HEADER = b"openssh-key-v1\x00"
 
 
-def can_parse(data: bytes) -> bool:
-    return data.startswith(MAGIC_HEADER)
+def _random_uint32() -> int:
+    return struct.unpack(">I", os.urandom(4))[0]
 
 
-def parse_file(data: bytes):
-    data = data[len(MAGIC_HEADER) :]
-    return ssh_proto_types.unmarshal(OpenSSHEncryptedPrivateKeyFile, data)
-
-
-class OpenSSHPublicKey(SSHPacket):
+class OpenSSHPublicKey(spt.Packet):
     key_type: ClassVar[str]
 
 
 class OpenSSHPublicKeyRSA(OpenSSHPublicKey):
-    key_type: ClassVar[str] = "ssh-rsa"
+    key_type: ClassVar[str] = SSH_RSA
     e: int
     n: int
 
 
 class OpenSSHPublicKeyEd25519(OpenSSHPublicKey):
-    key_type: ClassVar[str] = "ssh-ed25519"
-    pub: bytes
+    key_type: ClassVar[str] = SSH_ED25519
+    value: bytes
 
 
-class OpenSSHPrivateKey(SSHPacket):
-    check_int_1: Annotated[int, c_uint32]
-    check_int_2: Annotated[int, c_uint32]
-    key_type: ClassVar[str]
+class OpenSSHCheck(spt.Packet):
+    check_int_1: Annotated[int, spt.c_uint32]
+    check_int_2: Annotated[int, spt.c_uint32]
 
     def __post_init__(self):
         self.validate()
+
+    @classmethod
+    def create(cls, value: int | None) -> Self:
+        if value is None:
+            value = _random_uint32()
+        return cls(check_int_1=value, check_int_2=value)
 
     def validate(self):
         if self.check_int_1 != self.check_int_2:
             raise ValueError("Check integers do not match")
 
 
+class OpenSSHPrivateKey(spt.Packet):
+    check: OpenSSHCheck
+    key_type: ClassVar[str]
+
+
 class OpenSSHEd25519PrivateKey(OpenSSHPrivateKey):
-    key_type: ClassVar[str] = "ssh-ed25519"
-    pub: bytes
-    priv: bytes
+    key_type: ClassVar[str] = SSH_ED25519
+    public: bytes
+    private: bytes
     comment: str
-    pad: bytes
+
+    def __post_init__(self):
+        self.validate()
 
     def validate(self):
-        super().validate()
-        if len(self.pub) != 32:
+        if len(self.public) != 32:
             raise ValueError("Invalid public key length")
-        if len(self.priv) != 64:
+        if len(self.private) != 64:
             raise ValueError("Invalid private key length")
-        if self.priv[32:] != self.pub:
-            raise ValueError("Private key does not match public key")
+        if self.private[32:] != self.public:
+            raise ValueError("Private key does not end with public key")
 
 
-@dataclasses.dataclass
-class OpenSSHRSAPrivateKey(SSHPacket):
-    key_type: ClassVar[str] = "ssh-rsa"
+class OpenSSHRSAPrivateKey(OpenSSHPrivateKey):
+    key_type: ClassVar[str] = SSH_RSA
     n: int
     e: int
     d: int
@@ -93,20 +91,103 @@ class OpenSSHRSAPrivateKey(SSHPacket):
     p: int
     q: int
     comment: str
-    pad: bytes
 
 
-@dataclasses.dataclass
-class OpenSSHEncryptedPrivateKeyFile(SSHPacket):
-    cipher_name: str
-    kdf_name: str
-    kdf_opts: bytes
-    n_keys: Annotated[int, c_uint32]
-    pub_keys: bytes
-    priv_keys: bytes
+class EncryptedPrivateFile(spt.Packet):
+    cipher_name: ClassVar[str]
 
-    def public_key(self):
-        return ssh_proto_types.unmarshal(OpenSSHPublicKey, self.pub_keys)
+    def private_key(self, passphrase: SecretBytes | None) -> OpenSSHPrivateKey:
+        raise NotImplementedError
 
-    def private_key(self):
-        return ssh_proto_types.unmarshal(OpenSSHPrivateKey, self.priv_keys)
+
+class KDFOptions(spt.Packet):
+    salt: Annotated[Salt, bytes]
+    rounds: Annotated[Rounds, spt.c_uint32]
+
+
+class EncryptedPrivateFilePlain(EncryptedPrivateFile):
+    cipher_name: ClassVar[str] = NONE
+    kdf_name: ClassVar[str] = NONE
+    kdf_opts: ClassVar[bytes] = b""
+    n_keys: ClassVar[Annotated[int, spt.c_uint32]] = 1
+    public_key: Annotated[OpenSSHPublicKey, spt.nested]
+    encrypted_private_key: Annotated[EncryptedBytes, bytes]
+
+    def private_key(self, passphrase: SecretBytes | None) -> OpenSSHPrivateKey:
+        if passphrase is not None and passphrase.get_secret_value() != b"":
+            raise ValueError("Passphrase should not be provided for unencrypted private key")
+        return enc.decrypt_plain(OpenSSHPrivateKey, self.encrypted_private_key)
+
+
+class EncryptedPrivateFileAes256(EncryptedPrivateFile):
+    cipher_name: ClassVar[str] = AES256_CTR
+    kdf_name: ClassVar[str] = BCRYPT
+    kdf_opts: Annotated[KDFOptions, spt.nested]
+    n_keys: ClassVar[Annotated[int, spt.c_uint32]] = 1
+    public_key: Annotated[OpenSSHPublicKey, spt.nested]
+
+    encrypted_private_key: Annotated[EncryptedBytes, bytes]
+
+    def private_key(self, passphrase: SecretBytes | None) -> OpenSSHPrivateKey:
+        if passphrase is None:
+            raise ValueError("Passphrase is required for encrypted private key")
+        return enc.decrypt_aes256_ctr_bcrypt(
+            OpenSSHPrivateKey,
+            self.encrypted_private_key,
+            passphrase=passphrase,
+            rounds=self.kdf_opts.rounds,
+            salt=self.kdf_opts.salt,
+        )
+
+
+def can_parse_data(data: bytes) -> bool:
+    return data.startswith(MAGIC_HEADER)
+
+
+def decode_data(data: bytes):
+    data = data[len(MAGIC_HEADER) :]
+    return spt.unmarshal(EncryptedPrivateFile, data)
+
+
+def encode_data(obj: EncryptedPrivateFile) -> bytes:
+    return MAGIC_HEADER + spt.marshal(obj)
+
+
+def can_parse_pem(block: pem.PEMBlock) -> bool:
+    return block.header == PEM_HEADER and block.footer == PEM_HEADER
+
+
+def decode_pem(block: pem.PEMBlock) -> EncryptedPrivateFile:
+    if block.header != PEM_HEADER or block.footer != PEM_HEADER:
+        raise ValueError(f"Invalid PEM header/footer, expected {PEM_HEADER}")
+    return decode_data(block.data)
+
+
+def encode_pem(obj: EncryptedPrivateFile) -> pem.PEMBlock:
+    return pem.PEMBlock(
+        header=PEM_HEADER,
+        footer=PEM_HEADER,
+        data=encode_data(obj),
+    )
+
+
+def can_parse_file(data: bytes) -> bool:
+    return data.startswith(f"-----BEGIN {PEM_HEADER}-----".encode()) and data.rstrip().endswith(
+        f"-----END {PEM_HEADER}-----".encode()
+    )
+
+
+def encode_file(obj: EncryptedPrivateFile) -> bytes:
+    return pem.marshal(
+        encode_pem(obj),
+        width=70,
+        use_spaces=False,
+    )
+
+
+def decode_file(data: bytes) -> EncryptedPrivateFile:
+    blocks = pem.unmarshal(data)
+    if len(blocks) != 1:
+        raise ValueError("Expected exactly one PEM block")
+    block = blocks[0]
+    return decode_pem(block)
