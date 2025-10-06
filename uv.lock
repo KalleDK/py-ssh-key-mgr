@@ -329,9 +329,9 @@ test = [
 
 [[package]]
 name = "ssh-proto-types"
-version = "0.1.9"
+version = "0.1.15"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/36/18/006f47937c9c254dc83594a299c638d236a5d17fe93bc3b1cb22b014bd10/ssh_proto_types-0.1.9.tar.gz", hash = "sha256:c0823e043237070101d4997a04252f0382fc7d2218d13be24ec6f804a655edce", size = 23026, upload-time = "2025-10-01T13:31:58.736Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b7/bf/beee779498426078e2fb33aa9f3601ecb22a39fde56dfb2b98c0174e7cf2/ssh_proto_types-0.1.15.tar.gz", hash = "sha256:02691a978cca2b191b89c736102328e577b16fc36b70e96b902753a4da8548a2", size = 24421, upload-time = "2025-10-04T06:06:37.152Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f5/51/12031573bb661f1eedd74e206fec1221703e26606d5f986e903ccf7fa952/ssh_proto_types-0.1.9-py3-none-any.whl", hash = "sha256:9dce6b4bcd8751479e6a6195f58818e8956791bacb24851fd3f03acba579d5e4", size = 8749, upload-time = "2025-10-01T13:31:57.493Z" },
+    { url = "https://files.pythonhosted.org/packages/c2/c7/516d531d0aad2bb6e169302237f646b3cd4e77e176c85bda4c90d192f7db/ssh_proto_types-0.1.15-py3-none-any.whl", hash = "sha256:13262822b97289bac59323ea61e87f4c035377f9b3626eecb7ce1124a4f92023", size = 9505, upload-time = "2025-10-04T06:06:35.891Z" },
 ]
