@@ -206,7 +206,7 @@ PUTTY_KEY = {
         private=PuttyPrivateKeyEd25519(
             key=b"\x9da\xb1\x9d\xef\xfdZ`\xba\x84J\xf4\x92\xec,\xc4DI\xc5i{2i\x19p;\xac\x03\x1c\xae\x7f`",
         ),
-        comment="RFC8032 Test Vector 1",
+        comment="RFC8032 7.1 Test Vector 1",
     ),
     SSH_RSA_1024: PuttyKeyRSA(
         public=PuttyPublicKeyRSA(
@@ -289,7 +289,7 @@ PUTTY_MAC_KEY = {
 PUTTY_MAC = {
     ENC_AES256_CBC: {
         SSH_ED25519: Mac(
-            private_mac=b"\x177&\x98\x87I@\x11\xc8\x14\xcb,i5=\x1b/\x81\xd6\x1d\x98O\xed#Un\x10\xe8\xc6#d\xed"
+            private_mac=b"\x17\xd9\xe4\xca\xc8b4\x00\xc5\xa2\x92'\x120\xd9\x1c\xdc\x18\xbc-\xd6\x12\x05\x04\x0cPT9\xbf\x8fl\xdc"
         ),
         SSH_RSA_1024: Mac(
             private_mac=b"p\xe0\xbc\xe9P\xb3\x87\xbb\x949\x89\xe9\xbc}s\xe974\xe9\xf8\xf0r\xbe\xa5\xf8\x87\xf6\x85z\x1e\xa2\xe5"
@@ -300,7 +300,7 @@ PUTTY_MAC = {
     },
     ENC_NONE: {
         SSH_ED25519: Mac(
-            private_mac=b"vF\x18\xaa\xe8\xffG\x81\xe2q\x81\xdc\x01\xf8\xc7\x06\x0c\xe6z\x9e\x10a1\xfe\xfa\xd2\x9fh\x94[PH"
+            private_mac=b'"\xcf\x83\x08\xed\x9b\xbfDv\x0b\xe8\xd3\xfa9\x1c\xf2\x03\x9f\x06\x9b0\x14Nl\x8db\xc4X\x10\xc1ij'
         ),
         SSH_RSA_1024: Mac(
             private_mac=b"\x8b\x0c6\xad\xd1\x82c\xe2\x13\x1e\x94O\xc4\xa7\xe1MW\x9e\xae\xbd\x96IW\x7f|\xb1\x85\xc5\xf5Wc\xe5"
@@ -387,7 +387,7 @@ PUTTY_FILE_V3 = {
     ENC_AES256_CBC: {
         SSH_ED25519: PuttyFileV3(
             key_type="ssh-ed25519",
-            comment="RFC8032 Test Vector 1",
+            comment="RFC8032 7.1 Test Vector 1",
             public_lines=b"\x00\x00\x00\x0bssh-ed25519\x00\x00\x00 \xd7Z\x98\x01\x82\xb1\n\xb7\xd5K\xfe\xd3\xc9d\x07:\x0e\xe1r\xf3\xda\xa6#%\xaf\x02\x1ah\xf7\x07Q\x1a",
             decryption_params=DecryptionParams_AES256_CBC(
                 key_derivation=ArgonID.ID,
@@ -399,7 +399,9 @@ PUTTY_FILE_V3 = {
             private_lines=EncryptedBytes(
                 value=b"^\xff]x\x97\x06`3\x84 \xaf\x07\x94{q\xff!\x1f3v\x8e\x7f\\\xad\xaaV\xff\r\xb7\xb1\x105\xc2Y4\x1c#d\xe82\xedq?z/\x0c\xe7\x84"
             ),
-            mac=Mac(private_mac=b"\x177&\x98\x87I@\x11\xc8\x14\xcb,i5=\x1b/\x81\xd6\x1d\x98O\xed#Un\x10\xe8\xc6#d\xed"),
+            mac=Mac(
+                private_mac=b"\x17\xd9\xe4\xca\xc8b4\x00\xc5\xa2\x92'\x120\xd9\x1c\xdc\x18\xbc-\xd6\x12\x05\x04\x0cPT9\xbf\x8fl\xdc"
+            ),
         ),
         SSH_RSA_1024: PuttyFileV3(
             key_type="ssh-rsa",
@@ -441,14 +443,14 @@ PUTTY_FILE_V3 = {
     ENC_NONE: {
         SSH_ED25519: PuttyFileV3(
             key_type="ssh-ed25519",
-            comment="RFC8032 Test Vector 1",
+            comment="RFC8032 7.1 Test Vector 1",
             public_lines=b"\x00\x00\x00\x0bssh-ed25519\x00\x00\x00 \xd7Z\x98\x01\x82\xb1\n\xb7\xd5K\xfe\xd3\xc9d\x07:\x0e\xe1r\xf3\xda\xa6#%\xaf\x02\x1ah\xf7\x07Q\x1a",
             decryption_params=DecryptionParams_NONE(),
             private_lines=EncryptedBytes(
                 value=b"\x00\x00\x00 \x9da\xb1\x9d\xef\xfdZ`\xba\x84J\xf4\x92\xec,\xc4DI\xc5i{2i\x19p;\xac\x03\x1c\xae\x7f`"
             ),
             mac=Mac(
-                private_mac=b"vF\x18\xaa\xe8\xffG\x81\xe2q\x81\xdc\x01\xf8\xc7\x06\x0c\xe6z\x9e\x10a1\xfe\xfa\xd2\x9fh\x94[PH"
+                private_mac=b'"\xcf\x83\x08\xed\x9b\xbfDv\x0b\xe8\xd3\xfa9\x1c\xf2\x03\x9f\x06\x9b0\x14Nl\x8db\xc4X\x10\xc1ij'
             ),
         ),
         SSH_RSA_1024: PuttyFileV3(
@@ -482,7 +484,7 @@ PUTTY_PPK_V3 = {
     ENC_AES256_CBC: {
         SSH_ED25519: b"""PuTTY-User-Key-File-3: ssh-ed25519
 Encryption: aes256-cbc
-Comment: RFC8032 Test Vector 1
+Comment: RFC8032 7.1 Test Vector 1
 Public-Lines: 2
 AAAAC3NzaC1lZDI1NTE5AAAAINdamAGCsQq31Uv+08lkBzoO4XLz2qYjJa8CGmj3
 B1Ea
@@ -493,7 +495,7 @@ Argon2-Parallelism: 1
 Argon2-Salt: 0102030405060708090a0b0c0d0e0f10
 Private-Lines: 1
 Xv9deJcGYDOEIK8HlHtx/yEfM3aOf1ytqlb/DbexEDXCWTQcI2ToMu1xP3ovDOeE
-Private-MAC: 1737269887494011c814cb2c69353d1b2f81d61d984fed23556e10e8c62364ed
+Private-MAC: 17d9e4cac8623400c5a292271230d91cdc18bc2dd61205040c505439bf8f6cdc
 """,
         SSH_RSA_1024: b"""PuTTY-User-Key-File-3: ssh-rsa
 Encryption: aes256-cbc
@@ -539,13 +541,13 @@ Private-MAC: 16e63005250f9707eea0c593165e7f902129f74b341ffaa97af148a4f4153ae9
     ENC_NONE: {
         SSH_ED25519: b"""PuTTY-User-Key-File-3: ssh-ed25519
 Encryption: none
-Comment: RFC8032 Test Vector 1
+Comment: RFC8032 7.1 Test Vector 1
 Public-Lines: 2
 AAAAC3NzaC1lZDI1NTE5AAAAINdamAGCsQq31Uv+08lkBzoO4XLz2qYjJa8CGmj3
 B1Ea
 Private-Lines: 1
 AAAAIJ1hsZ3v/VpguoRK9JLsLMREScVpezJpGXA7rAMcrn9g
-Private-MAC: 764618aae8ff4781e27181dc01f8c7060ce67a9e106131fefad29f68945b5048
+Private-MAC: 22cf8308ed9bbf44760be8d3fa391cf2039f069b30144e6c8d62c45810c1696a
 """,
         SSH_RSA_1024: b"""PuTTY-User-Key-File-3: ssh-rsa
 Encryption: none

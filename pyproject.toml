@@ -23,6 +23,9 @@ Homepage = "https://github.com/KalleDK/py-ssh-key-mgr"
 Documentation = "https://github.com/KalleDK/py-ssh-key-mgr"
 Repository = "https://github.com/KalleDK/py-ssh-key-mgr.git"
 
+[project.scripts]
+ssh-key-mgr = "ssh_key_mgr.cli.app:main"
+
 [project.optional-dependencies]
 cli = [
     "pyyaml>=6.0.3",

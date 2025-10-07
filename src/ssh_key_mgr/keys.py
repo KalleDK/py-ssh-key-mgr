@@ -227,11 +227,11 @@ class PrivateKeyEd25519(PrivateKey):
 
     def __post_init__(self):
         if len(self.private) != 32:
-            raise ValueError("Invalid private key length")
+            raise ValueError(f"Invalid private key length got {len(self.private)} expected 32")
 
     @classmethod
     def from_putty(cls, key: PuttyPrivateKeyEd25519) -> Self:
-        return cls(private=key.key)
+        return cls(private=key.key[:32])
 
     def to_putty(self) -> PuttyPrivateKeyEd25519:
         return PuttyPrivateKeyEd25519(key=self.private)
@@ -283,8 +283,8 @@ class KeyPairEd25519(KeyPair):
             raise ValueError(f"Invalid key pair type: {type(keypair)}")
         return cls(
             comment=keypair.comment,
-            public=PublicKeyEd25519(value=keypair.public.value),
-            private=PrivateKeyEd25519(private=keypair.private.private),
+            public=PublicKeyEd25519.from_openssh(keypair.public),
+            private=PrivateKeyEd25519.from_openssh(keypair.private),
         )
 
     @override
@@ -391,8 +391,8 @@ class KeyPairEd448(KeyPair):
             raise ValueError(f"Invalid key pair type: {type(keypair)}")
         return cls(
             comment=keypair.comment,
-            public=PublicKeyEd448(value=keypair.public.value),
-            private=PrivateKeyEd448(private=keypair.private.private),
+            public=PublicKeyEd448.from_openssh(keypair.public),
+            private=PrivateKeyEd448.from_openssh(keypair.private),
         )
 
     @override

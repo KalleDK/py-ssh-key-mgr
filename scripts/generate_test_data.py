@@ -216,7 +216,7 @@ def create_key(
 
 def create_ed25519():
     return "SSH_ED25519", KeyPairEd25519(
-        comment="RFC8032 Test Vector 1",
+        comment="RFC8032 7.1 Test Vector 1",
         private=PrivateKeyEd25519(
             private=b"\x9d\x61\xb1\x9d\xef\xfdZ`\xba\x84J\xf4\x92\xec,\xc4DI\xc5i{2i\x19p;\xac\x03\x1c\xae\x7f`"
         ),

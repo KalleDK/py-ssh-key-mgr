@@ -41,7 +41,7 @@ Passphrase:
 Keys:
   SSH_ED25519:
     Name: SSH_ED25519
-    Comment: RFC8032 Test Vector 1
+    Comment: RFC8032 7.1 Test Vector 1
     PuttyKeyType: Ed25519
     PublicWire: b'\x00\x00\x00\x0bssh-ed25519\x00\x00\x00 \xd7Z\x98\x01\x82\xb1\n\xb7\xd5K\xfe\xd3\xc9d\x07:\x0e\xe1r\xf3\xda\xa6#%\xaf\x02\x1ah\xf7\x07Q\x1a'
     PrivateWire: b'\x00\x00\x00 \x9da\xb1\x9d\xef\xfdZ`\xba\x84J\xf4\x92\xec,\xc4DI\xc5i{2i\x19p;\xac\x03\x1c\xae\x7f`'
@@ -56,25 +56,25 @@ Keys:
         Encrypted: EncryptedBytes(value=b'\x00\x00\x00 \x9da\xb1\x9d\xef\xfdZ`\xba\x84J\xf4\x92\xec,\xc4DI\xc5i{2i\x19p;\xac\x03\x1c\xae\x7f`')
         Decrypted: b'\x00\x00\x00 \x9da\xb1\x9d\xef\xfdZ`\xba\x84J\xf4\x92\xec,\xc4DI\xc5i{2i\x19p;\xac\x03\x1c\xae\x7f`'
         MacKey: MacKey(b'')
-        Mac: Mac(private_mac=b'vF\x18\xaa\xe8\xffG\x81\xe2q\x81\xdc\x01\xf8\xc7\x06\x0c\xe6z\x9e\x10a1\xfe\xfa\xd2\x9fh\x94[PH')
+        Mac: Mac(private_mac=b'"\xcf\x83\x08\xed\x9b\xbfDv\x0b\xe8\xd3\xfa9\x1c\xf2\x03\x9f\x06\x9b0\x14Nl\x8db\xc4X\x10\xc1ij')
         DecryptParams: {}
         EncryptParams: {}
         PPK: |
           PuTTY-User-Key-File-3: ssh-ed25519
           Encryption: none
-          Comment: RFC8032 Test Vector 1
+          Comment: RFC8032 7.1 Test Vector 1
           Public-Lines: 2
           AAAAC3NzaC1lZDI1NTE5AAAAINdamAGCsQq31Uv+08lkBzoO4XLz2qYjJa8CGmj3
           B1Ea
           Private-Lines: 1
           AAAAIJ1hsZ3v/VpguoRK9JLsLMREScVpezJpGXA7rAMcrn9g
-          Private-MAC: 764618aae8ff4781e27181dc01f8c7060ce67a9e106131fefad29f68945b5048
+          Private-MAC: 22cf8308ed9bbf44760be8d3fa391cf2039f069b30144e6c8d62c45810c1696a
       AES256_CBC:
         Passphrase: SecretBytes(b'correct horse battery staple')
         Encrypted: EncryptedBytes(value=b'^\xff]x\x97\x06`3\x84 \xaf\x07\x94{q\xff!\x1f3v\x8e\x7f\\\xad\xaaV\xff\r\xb7\xb1\x105\xc2Y4\x1c#d\xe82\xedq?z/\x0c\xe7\x84')
         Decrypted: b'\x00\x00\x00 \x9da\xb1\x9d\xef\xfdZ`\xba\x84J\xf4\x92\xec,\xc4DI\xc5i{2i\x19p;\xac\x03\x1c\xae\x7f`\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c'
         MacKey: MacKey(b'y\xfc\x0f5Ea14\xd0\x02\x90u\x11*\x0cah[\xccC#\x916\x83)\xa3\t\xdcK{\xec\x0b')
-        Mac: Mac(private_mac=b'\x177&\x98\x87I@\x11\xc8\x14\xcb,i5=\x1b/\x81\xd6\x1d\x98O\xed#Un\x10\xe8\xc6#d\xed')
+        Mac: Mac(private_mac=b"\x17\xd9\xe4\xca\xc8b4\x00\xc5\xa2\x92'\x120\xd9\x1c\xdc\x18\xbc-\xd6\x12\x05\x04\x0cPT9\xbf\x8fl\xdc")
         DecryptParams:
           key_derivation: ArgonID.ID
           argon2_memory: MemoryCost(value=8192)
@@ -89,7 +89,7 @@ Keys:
         PPK: |
           PuTTY-User-Key-File-3: ssh-ed25519
           Encryption: aes256-cbc
-          Comment: RFC8032 Test Vector 1
+          Comment: RFC8032 7.1 Test Vector 1
           Public-Lines: 2
           AAAAC3NzaC1lZDI1NTE5AAAAINdamAGCsQq31Uv+08lkBzoO4XLz2qYjJa8CGmj3
           B1Ea
@@ -100,7 +100,7 @@ Keys:
           Argon2-Salt: 0102030405060708090a0b0c0d0e0f10
           Private-Lines: 1
           Xv9deJcGYDOEIK8HlHtx/yEfM3aOf1ytqlb/DbexEDXCWTQcI2ToMu1xP3ovDOeE
-          Private-MAC: 1737269887494011c814cb2c69353d1b2f81d61d984fed23556e10e8c62364ed
+          Private-MAC: 17d9e4cac8623400c5a292271230d91cdc18bc2dd61205040c505439bf8f6cdc
     OpenSSH:
       NONE:
         PEM: |
@@ -109,7 +109,7 @@ Keys:
           QyNTUxOQAAACDXWpgBgrEKt9VL/tPJZAc6DuFy89qmIyWvAhpo9wdRGgAAAKBJlgLSSZYC
           0gAAAAtzc2gtZWQyNTUxOQAAACDXWpgBgrEKt9VL/tPJZAc6DuFy89qmIyWvAhpo9wdRGg
           AAAECdYbGd7/1aYLqESvSS7CzEREnFaXsyaRlwO6wDHK5/YNdamAGCsQq31Uv+08lkBzoO
-          4XLz2qYjJa8CGmj3B1EaAAAAFVJGQzgwMzIgVGVzdCBWZWN0b3IgMQECAwQFBgcI
+          4XLz2qYjJa8CGmj3B1EaAAAAGVJGQzgwMzIgNy4xIFRlc3QgVmVjdG9yIDEBAgME
           -----END OPENSSH PRIVATE KEY-----
       AES256_CTR:
         PEM: |
@@ -118,8 +118,8 @@ Keys:
           YHCAkKCwwNDg8QAAAAGAAAAAEAAAAzAAAAC3NzaC1lZDI1NTE5AAAAINdamAGCsQq31Uv+
           08lkBzoO4XLz2qYjJa8CGmj3B1EaAAAAoGFdmXtrWWEOk4abhT4DYb+fe1a/FrzBAXcb+J
           gZSa8tfEx+YJanDxVovbrc7wDKOqtou3CvAuYTknFhE8mHoBZoCFAbEsEIP/IazF3c9mOK
-          FCUSuz8SB9RplWDdURSjlN6/wKf1KgZ6FKhQCvNJtd71eZdt5RNSs4iB+nTyd+e0EqdzqL
-          COP7NJJiPaxK8oqx34UncWYeElHtxtkZxF2oY=
+          FCUSuz8SB9RplWDdURSjlN6/wKf1KgZ6FKhQCvNJtd71eZdt5RNSs4iB+nTyd+e0Eqd/qL
+          COP7NJJiO5j+183y7uRSMvdqJgcKxOpJhB3oo=
           -----END OPENSSH PRIVATE KEY-----
   SSH_RSA_1024:
     Name: SSH_RSA_1024
