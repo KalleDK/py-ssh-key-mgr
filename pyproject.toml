@@ -38,7 +38,6 @@ crypto = [
 [dependency-groups]
 test = [
     "coverage>=7.10.7",
-    "pydantic>=2.11.10",
     "pytest>=8.4.2",
     "pytest-cov>=7.0.0",
 ]
