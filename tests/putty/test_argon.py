@@ -23,7 +23,7 @@ def test_hash(test_name: str):
     params = PUTTY_ARGON[test_name]["Params"]
     passphrase = PUTTY_ARGON[test_name]["Passphrase"]
 
-    got = argon.hash_passphrase(params, passphrase)
+    got = argon.hash_passphrase(params, len(want), passphrase)
     assert got == want
 
 
@@ -35,7 +35,7 @@ def test_hash_import_error(test_name: str):
         params = PUTTY_ARGON[test_name]["Params"]
         passphrase = PUTTY_ARGON[test_name]["Passphrase"]
 
-        got = argon.hash_passphrase(params, passphrase)
+        got = argon.hash_passphrase(params, len(want), passphrase)
         assert got == want
 
 

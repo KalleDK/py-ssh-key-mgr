@@ -2,6 +2,7 @@ import contextlib
 import dataclasses
 import pathlib
 import sys
+import typing
 from hashlib import sha256
 from typing import Annotated, Any
 from unittest.mock import patch
@@ -29,9 +30,11 @@ from ssh_key_mgr.putty.encryption import SecretBytes, argon
 app = typer.Typer(help="Generate keys and YAML data for testing.")
 
 PARAMS_TYPES = {
-    "NONE": (putty.DecryptionParams_NONE, putty.EncryptionParams_NONE),
-    "AES256_CBC": (putty.DecryptionParams_AES256_CBC, putty.EncryptionParams_AES256_CBC),
+    "NONE": (putty.Encryption_NONE, putty.Encryption_NONE_Params),
+    "AES256_CBC": (putty.Encryption_AES256_CBC, putty.Encryption_AES256_CBC_Params),
 }
+
+# region Randomness Control
 
 
 def fake_gen_salt(size: int) -> argon.Salt:
@@ -70,6 +73,9 @@ def no_randomness():
         yield
 
 
+# endregion
+
+
 def create_aes_test_params():
     result: dict[str, Any] = {}
     for i in range(2):
@@ -100,13 +106,12 @@ def create_argon_test_params(hash_nr: int = 3):
             time_cost=argon.TimeCost(21),
             parallelism=argon.Parallelism(1),
             salt=salt,
-            hash_length=hash_length,
         )
         passphrase = SecretBytes(b"passphrase_" + bytes(str(i), "ascii"))
 
-        hash = argon.hash_passphrase(params, passphrase)  # to verify it works
+        hash = argon.hash_passphrase(params, hash_length, passphrase)  # to verify it works
         result[f"TestVector_{hash_length}"] = {
-            "Params": {"Salt": repr(salt)},
+            "Params": {"Salt": "Salt(" + repr(salt) + ")"},
             "Passphrase": f'SecretBytes(b"passphrase_{i}")',
             "Hash": repr(hash),
             "HashLength": hash_length,
@@ -114,17 +119,16 @@ def create_argon_test_params(hash_nr: int = 3):
     return result
 
 
-def create_putty(
-    path: pathlib.Path, enc_params: putty.EncryptionParams, key: putty.PuttyKey, passphrase: SecretBytes | None
-):
+def create_putty(path: pathlib.Path, encryption: putty.Encryption, key: putty.PuttyKey, passphrase: SecretBytes | None):
+    enc_params = encryption.generate_params()
     decrypted = enc_params.add_padding(bytes(key.private))
-    encrypted, dec_params, mackey = enc_params.encrypt(decrypted, passphrase)
+    encrypted, mackey = enc_params.encrypt(decrypted, passphrase)
     public_wire = bytes(key.public)
     mac = putty.Mac.generate(
         putty.MacData(
             comment=key.comment,
             algorithm=key.key_type,
-            encryption=dec_params.encryption_type,
+            encryption=enc_params.encryption_type,
             public_wire=public_wire,
             private_padded_wire=decrypted,
         ),
@@ -134,7 +138,7 @@ def create_putty(
         putty.PuttyFileV3(
             key_type=key.key_type,
             comment=key.comment,
-            decryption_params=dec_params,
+            decryption_params=enc_params,
             public_lines=public_wire,
             private_lines=encrypted,
             mac=mac,
@@ -148,19 +152,30 @@ def create_putty(
         "Decrypted": repr(decrypted),
         "MacKey": "MacKey(" + repr(mackey.get_secret_value()) + ")",
         "Mac": repr(mac),
-        "DecryptParams": get_data_fields(dec_params),
-        "EncryptParams": get_data_fields(enc_params),
+        "DecryptParams": get_data_fields(enc_params),
+        "EncryptParams": get_data_fields(encryption),
         "PPK": ppk_file.decode(),
     }
+
+
+def get_data_value(value: Any):
+    fields = get_data_fields(value)
+    field_str = ", ".join(f"{k}={v}" for k, v in fields.items())
+    return value.__class__.__name__ + "(" + field_str + ")"
 
 
 def get_data_fields(obj: Any) -> dict[str, Any]:
     pub_data: dict[str, Any] = {}
     for field in dataclasses.fields(obj):
         value = getattr(obj, field.name)
-        if isinstance(value, argon.ArgonID):
+        if dataclasses.is_dataclass(value):
+            value = get_data_value(value)
+        elif isinstance(field.type, typing.NewType):
+            cls = str(field.type).split(".")[-1]
+            value = f"{cls}({value})"
+        elif isinstance(value, argon.ArgonID):
             value = f"ArgonID.{value.name}"
-        elif isinstance(value, (argon.TimeCost, argon.MemoryCost, argon.Parallelism, argon.ArgonID, argon.Salt, bytes)):
+        elif isinstance(value, bytes):
             value = repr(value)
         pub_data[field.name] = value
     return pub_data
@@ -173,7 +188,7 @@ def show_pass(passphrase: SecretBytes | None) -> str:
 
 
 def create_key(
-    path: pathlib.Path, name: str, key: KeyPair, aes256_cbc: putty.EncryptionParams_AES256_CBC, passphrase: SecretBytes
+    path: pathlib.Path, name: str, key: KeyPair, aes256_cbc: putty.Encryption_AES256_CBC, passphrase: SecretBytes
 ):
     putty_key = key.to_putty()
     openssh_key = key.to_openssh()
@@ -201,7 +216,7 @@ def create_key(
         },
         "Putty": {
             "NONE": create_putty(
-                (path / (name + "_none")).with_suffix(".ppk"), putty.EncryptionParams_NONE(), putty_key, None
+                (path / (name + "_none")).with_suffix(".ppk"), putty.Encryption_NONE(), putty_key, None
             ),
             "AES256_CBC": create_putty(
                 (path / (name + "_aes256_cbc")).with_suffix(".ppk"), aes256_cbc, putty_key, passphrase
@@ -212,6 +227,9 @@ def create_key(
             "AES256_CTR": {"PEM": openssh_aes256_ctr.decode()},
         },
     }
+
+
+# region Generate Test Keys
 
 
 def create_ed25519():
@@ -242,7 +260,7 @@ def create_ed448():
     )
 
 
-def create_rsa():
+def create_rsa_1024():
     return "SSH_RSA_1024", KeyPairRSA(
         comment="testRSA1024",
         public=PublicKeyRSA(
@@ -256,6 +274,9 @@ def create_rsa():
             IQMP=9721458286354115561136508670716762220861275896641841230665434115409468173060220159554666387496302638490101614064924388438264332619353455984953340421959387,
         ),
     )
+
+
+# endregion
 
 
 def str_presenter(dumper: yaml.representer.SafeRepresenter, data: str) -> ScalarNode:
@@ -278,11 +299,11 @@ def main(out: Annotated[pathlib.Path, typer.Option()] = pathlib.Path("./keys")) 
         typer.echo("Generating keys and YAML data...", err=True)
         name_1, key_1 = create_ed25519()
 
-        name_2, key_2 = create_rsa()
+        name_2, key_2 = create_rsa_1024()
 
         name_3, key_3 = create_ed448()
 
-        aes256_cbc = putty.EncryptionParams_AES256_CBC()
+        aes256_cbc = putty.Encryption_AES256_CBC()
         data: dict[str, Any] = {
             "AES": create_aes_test_params(),
             "Argon": create_argon_test_params(),
@@ -292,9 +313,9 @@ def main(out: Annotated[pathlib.Path, typer.Option()] = pathlib.Path("./keys")) 
                 "Invalid": {"AES256_CBC": "None", "NONE": 'SecretBytes(b"invalid")'},
             },
             "Keys": {
-                name_1: create_key(path, name_1, key_1, aes256_cbc, SecretBytes(b"correct horse battery staple")),
-                name_2: create_key(path, name_2, key_2, aes256_cbc, SecretBytes(b"correct horse battery other staple")),
-                name_3: create_key(path, name_3, key_3, aes256_cbc, SecretBytes(b"correct horse battery ed448 staple")),
+                name_1: create_key(path, name_1, key_1, aes256_cbc, SecretBytes(b"test1")),
+                name_2: create_key(path, name_2, key_2, aes256_cbc, SecretBytes(b"test2")),
+                name_3: create_key(path, name_3, key_3, aes256_cbc, SecretBytes(b"test3")),
             },
             "Putty": {
                 "Encryption": [

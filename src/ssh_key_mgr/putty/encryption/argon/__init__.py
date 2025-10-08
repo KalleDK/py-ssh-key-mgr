@@ -2,7 +2,6 @@ import typing
 
 from ssh_key_mgr.putty.encryption.argon.base import (
     Argon2Params,
-    Argon2ParamsTmpl,
     ArgonID,
     MemoryCost,
     Parallelism,
@@ -14,7 +13,7 @@ from ssh_key_mgr.secretstr import SecretBytes
 if typing.TYPE_CHECKING:
 
     def gen_salt(length: int) -> Salt: ...
-    def hash_passphrase(params: Argon2Params, passphrase: SecretBytes) -> bytes: ...
+    def hash_passphrase(params: Argon2Params, hash_size: int, passphrase: SecretBytes) -> bytes: ...
 
 else:
     try:
@@ -26,12 +25,11 @@ else:
         def gen_salt(length: int) -> Salt:
             raise ImportError("argon2-cffi is required for Argon2 salt generation")
 
-        def hash_passphrase(params: Argon2Params, passphrase: SecretBytes) -> bytes:
+        def hash_passphrase(params: Argon2Params, hash_size: int, passphrase: SecretBytes) -> bytes:
             raise ImportError("argon2-cffi is required for Argon2 hashing")
 
 
 __all__ = [
-    "Argon2ParamsTmpl",
     "Argon2Params",
     "ArgonID",
     "Salt",

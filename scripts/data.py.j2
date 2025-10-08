@@ -7,8 +7,8 @@ from ssh_key_mgr.putty import (
     PuttyFileV3,
     EncryptedBytes,
 {%- for name in Putty.Encryption %}
-    DecryptionParams_{{ name }},
-    EncryptionParams_{{ name }},
+    Encryption_{{ name }}_Params,
+    Encryption_{{ name }},
 {%- endfor %}
 {%- for name in Putty.KeyType %}
     PuttyKey{{ name }},
@@ -60,7 +60,6 @@ PUTTY_ARGON: dict[str, PUTTY_ARGON_DICT] = {
             time_cost=TimeCost(21),
             parallelism=Parallelism(1),
             salt={{ Value.Params.Salt }},
-            hash_length={{ Value.HashLength }},
         ),
         "Passphrase": {{ Value.Passphrase }},
         "Hash": {{ Value.Hash }},
@@ -212,14 +211,14 @@ PUTTY_MAC = {
 
 class PUTTY_DECRYPTION_PARAMS_DICT(TypedDict):
 {%- for name in Putty.Encryption %}
-    {{ name | lower }}: dict[KEY_NAMES_T, DecryptionParams_{{ name | upper }}]
+    {{ name | lower }}: dict[KEY_NAMES_T, Encryption_{{ name | upper }}_Params]
 {%- endfor %}
 
 PUTTY_DECRYPTION_PARAMS: PUTTY_DECRYPTION_PARAMS_DICT = {
 {%- for name in Putty.Encryption %}
     ENC_{{ name }}: {
 {%- for Key in Keys.values() %}
-        {{ Key.Name }}: DecryptionParams_{{ name }}(
+        {{ Key.Name }}: Encryption_{{ name }}_Params(
 {%- for field, value in Key.Putty[name].DecryptParams.items() %}
         {{ field }}={{ value }},
 {%- endfor %}
@@ -231,14 +230,14 @@ PUTTY_DECRYPTION_PARAMS: PUTTY_DECRYPTION_PARAMS_DICT = {
 
 class PUTTY_ENCRYPTION_PARAMS_DICT(TypedDict):
 {%- for name in Putty.Encryption %}
-    {{ name | lower }}: dict[KEY_NAMES_T, EncryptionParams_{{ name | upper }}]
+    {{ name | lower }}: dict[KEY_NAMES_T, Encryption_{{ name | upper }}]
 {%- endfor %}
 
 PUTTY_ENCRYPTION_PARAMS: PUTTY_ENCRYPTION_PARAMS_DICT = {
 {%- for name in Putty.Encryption %}
     ENC_{{ name }}: {
 {%- for Key in Keys.values() %}
-        {{ Key.Name }}: EncryptionParams_{{ name }}(
+        {{ Key.Name }}: Encryption_{{ name }}(
 {%- for field, value in Key.Putty[name].EncryptParams.items() %}
         {{ field }}={{ value }},
 {%- endfor %}
@@ -257,7 +256,7 @@ PUTTY_FILE_V3 = {
             key_type="{{ Putty.KeyType[Key.PuttyKeyType].Type }}",
             comment="{{ Key.Comment }}",
             public_lines={{ Key.PublicWire }},
-            decryption_params=DecryptionParams_{{ enc_name }}(
+            decryption_params=Encryption_{{ enc_name }}_Params(
 {%- for field, value in Key.Putty[enc_name].DecryptParams.items() %}
             {{ field }}={{ value }},
 {%- endfor %}

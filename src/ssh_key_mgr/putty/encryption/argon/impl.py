@@ -25,16 +25,16 @@ def argon_type(aid: ArgonID):
             return argon2.Type.ID
 
 
-def hash_passphrase(params: Argon2Params, passphrase: SecretBytes) -> bytes:
+def hash_passphrase(params: Argon2Params, hash_size: int, passphrase: SecretBytes) -> bytes:
     hasher = argon2.PasswordHasher(
         time_cost=int(params.time_cost),
         memory_cost=int(params.memory_cost),
         parallelism=int(params.parallelism),
-        hash_len=params.hash_length,
+        hash_len=hash_size,
         salt_len=len(params.salt),
         type=argon_type(params.type),
     )
-    hash_line = hasher.hash(passphrase.get_secret_value(), salt=params.salt.value)
+    hash_line = hasher.hash(passphrase.get_secret_value(), salt=params.salt)
     hash_passphrase = hash_line.split("$")[-1].encode()
     key = base64.b64decode(hash_passphrase + b"=" * (-len(hash_passphrase) % 4))
     return key

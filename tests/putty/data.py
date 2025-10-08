@@ -1,11 +1,11 @@
 from typing import Literal, TypedDict
 
 from ssh_key_mgr.putty import (
-    DecryptionParams_AES256_CBC,
-    DecryptionParams_NONE,
     EncryptedBytes,
-    EncryptionParams_AES256_CBC,
-    EncryptionParams_NONE,
+    Encryption_AES256_CBC,
+    Encryption_AES256_CBC_Params,
+    Encryption_NONE,
+    Encryption_NONE_Params,
     PuttyFileV3,
     PuttyKeyEd448,
     PuttyKeyEd25519,
@@ -67,8 +67,7 @@ PUTTY_ARGON: dict[str, PUTTY_ARGON_DICT] = {
             memory_cost=MemoryCost(8192),
             time_cost=TimeCost(21),
             parallelism=Parallelism(1),
-            salt=Salt(value=b"\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10"),
-            hash_length=16,
+            salt=Salt(b"\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10"),
         ),
         "Passphrase": SecretBytes(b"passphrase_0"),
         "Hash": b"j|e\xd3\xb6\xc6\x9bD\x9f\xd0\xdd\x1c\x1f\xe5\xff5",
@@ -79,8 +78,7 @@ PUTTY_ARGON: dict[str, PUTTY_ARGON_DICT] = {
             memory_cost=MemoryCost(8192),
             time_cost=TimeCost(21),
             parallelism=Parallelism(1),
-            salt=Salt(value=b"\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10"),
-            hash_length=24,
+            salt=Salt(b"\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10"),
         ),
         "Passphrase": SecretBytes(b"passphrase_1"),
         "Hash": b"\xe1\xfd\x81\x1a!R\x10\xe3q\x88Fa&\xf3g\x02\x83\x1c\xcd\x96\t\x87\xa3\x90",
@@ -91,8 +89,7 @@ PUTTY_ARGON: dict[str, PUTTY_ARGON_DICT] = {
             memory_cost=MemoryCost(8192),
             time_cost=TimeCost(21),
             parallelism=Parallelism(1),
-            salt=Salt(value=b"\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10"),
-            hash_length=32,
+            salt=Salt(b"\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10"),
         ),
         "Passphrase": SecretBytes(b"passphrase_2"),
         "Hash": b"\xca\x9bx\xc8\xf0\x94L\x8d\xb3\xc0[\x9b\x95\xbd\xd3\xb8\xfb\x19\xa5\xdf\xb6\xaa\nL\x8d9f\xf8\xa3\x8e\x80\xee",
@@ -144,15 +141,15 @@ INCORRECT_PASSPHRASE = {
 PASSPHRASES = {
     SSH_ED25519: {
         ENC_NONE: None,
-        ENC_AES256_CBC: SecretBytes(b"correct horse battery staple"),
+        ENC_AES256_CBC: SecretBytes(b"test1"),
     },
     SSH_RSA_1024: {
         ENC_NONE: None,
-        ENC_AES256_CBC: SecretBytes(b"correct horse battery other staple"),
+        ENC_AES256_CBC: SecretBytes(b"test2"),
     },
     SSH_ED448: {
         ENC_NONE: None,
-        ENC_AES256_CBC: SecretBytes(b"correct horse battery ed448 staple"),
+        ENC_AES256_CBC: SecretBytes(b"test3"),
     },
 }
 
@@ -236,13 +233,13 @@ PUTTY_KEY = {
 PUTTY_ENCRYPTED = {
     ENC_AES256_CBC: {
         SSH_ED25519: EncryptedBytes(
-            value=b"^\xff]x\x97\x06`3\x84 \xaf\x07\x94{q\xff!\x1f3v\x8e\x7f\\\xad\xaaV\xff\r\xb7\xb1\x105\xc2Y4\x1c#d\xe82\xedq?z/\x0c\xe7\x84"
+            value=b"\xdcI\x85e\xdb)\xe6Q\xf7o\x938h\x7f\xa4\xc3\x8d|\xc9\x82\xc8\xdf\x8eh\xb0}\xa0\x83\xd8\x92\xde\xf6-\xdcD\xd7\t\xbb\xd8K\xf5}9\xa1\x98\x99\xce\xcc"
         ),
         SSH_RSA_1024: EncryptedBytes(
-            value=b"\xa05\xdc\x96\xa8\xdd#\xea\x10\x94$\xc4\x04\xf0=J\x9b^\x10\x05\xa5\x9e\xe4Pjf1\xe1\xdfO&\x0f\x16\x14\x1e\xe9\x03J\xa5\xa9\x01\xa1\x89\xbaJ\x9d\xe3\x06JuP\x82\x13\xfc\xc1s\x14\\\xe4\x84\xef1\xaa\xcd$W\xc5\xbf\xa1\x0c+\xaf\x17\xca\xb5W\x07h1\xae\x83\xaa\t\xf0\xa4\xb9\xec\x1c\xb3B+\x0e\xaa\x813(wi\xee\xac@\x86E\x8b\xdb6~;r\x06N\xd7z\t%\x98S\xcc!\xe5\x80U\x0c\xa3\xf2w\x9c\xa2\xcf\xa4`\xb5>Z^>Pld\xac\x1a\x181\xe3W\xa7;\x10tb\xb5\xd2\xd8\xdfu\xda)\xa96\x02\xce7\x89u;]\x8dm\x8b\xd7S\xad\xff\x16\xc5\x87pw\\\x1dw8i'\xb4\xed\xc1\x0808\xd9_|r\xf4\xc3U\x91\xbdD&\xa9\xac\xb3\x13\xb3\xa9\x84\xafS\x9d\xf9\xdct\xe1\xd6\xaa\x12Ql\xeaWxv\xa6\xcf#\xc6~\xb56/\xe1\x07\x14\xd4\xf8\x1d\xc0\xcf\xd7\xf7\x00\x90\xfd.8g\xd6g\x91\x10\x04\xf8\xec\xacm\xddD_\xb4\xcb\xce\xa8m]\xe5\xcf\x11\xe7\xd5i\x9b\xc7Ai\xc4\xaf\x90\xf3\xb1\x87\xff\xdeP\xf8\x88\xcd\x0f\xc9z\x0b\xc7o\x92\x97\xcdw\xaf\x10\xaf\xd2\xc5\x06)\xd7\xa2\xe4DB\xdb\xd7\x1b\xe8\x00kdt\x95\x81\xcd\x855\x1b\x10@7E\x82\x0b\xeb;\x96\x9e\x19\xb9\t\x82\xaf4H\x95:\x821=%\xdb49<\x0b"
+            value=b"M\x8e\xec!\x0f\x14\xbfO\xb6\xad\xf1'T\xdf\xc30\x83\xba\xaf0\xe5\xd5K\x1c\x80\xd66\xe9\x12B\xef\xce\xd4\xcdhe\xdd\x9d\\}\xaa\xca\x9cr\x90_|\x10n\xcf\xbdb\xb3\x01V\x86\x08\x15_\x94)\x88\x01\xf0lOu\x1d\xb2\x9dq<\x80\xa5 \rX\xe4\x81\xa6q}\xbc\x14\xb9[Z\xd6\x14\x1d.I\xfc\x9b\xfc\x9b\xeaM\xc9\xf0G\xdc\xe0\x91F\xb2\xb4\xe4\xbdS\xc6j\r-<\xc3\xbc\x97\xc1\xbd\xf9 \xe0\x0197\xb7=V\xbdQ\xe8\xf0\x94\xef\xb3h\x86\x86xL\x97\xe6?\xf4+\x18\x96_\x7f\xbe\x9d\x94j\x1c\x9c\xb9\x97\x01\xbb\xf1k\xf6\xdd\x8dQZ\xab\xc93\xab\x96|\x13'1\x10m\xe2\xda<{>\xf5~\xfa\x94l\xe0{O\xd1\xe0\xb1\xdc \x11\xb5~\xde\x14\xc1\xfb\x1c|\xa3A-)\xdcN#\xb0\x1eq\xd4\xf7\xa1\xd8:/\xb5\xf2\xe0\x06\xc2#p\"i\xf2\xf5\xe0\xf6\xf2\xc0\xed \x15\"<\xcf\x10-\x91\x8dmj\x14\x89\xb9\x04\x0bO\xac\x95\xbf\xed\x96\x14\x9eT?\xcfL\x03\xf40\xa0v\xac(\xe3\xecJ\x9c\x98h\xcbB\xbb\x8a-\xcf\xb5\xd5o\xeeQ\x80\xa1\x8c\xf2\x13\xad\xcfs_\xf7f;\x86\xd6\xb8\xb9\xc50\xfaG\xa4\n%\xeb\xe7|t\x0b\xd9\xbb\x8d\xfa>\x8b\x84y\x82\xf67t\x82\xb4iU\xf74\xa0\xca\xfc\xf02j\xb1\xc7\xd6\xcbG\xc4\xbf\x11>U\xfd"
         ),
         SSH_ED448: EncryptedBytes(
-            value=b'\x82Yin\x06c\x96\x93da\x86\x1a\xa7\xbb\xfbO\x89xC\xc2>\xbf\xba\xa3\xc0\xea\xe2\xf1\x8d\x01.\x15\xf0Yy\xc8\xdcc\xba\xfd\xb7\x1d\x9e\xd9\xbe0T9u"\x91A\xba5\x98\xd4~\x9b:\xb9^\x80Zl'
+            value=b'\xef\x1aOK\xb8\xea"#\xbf!\xa4\x03\x14e\x98\x8dqZ\x1d/\xe0\xcd\xcb\xe4g"%\x12\xa9\xc8]\x13\x8f\xf5\xf9rl\x81\xd2\xe7vV\x85>D\xfbp\x06\xee\xd8\xeb\t\x19bnm\xc5?\xe5\xd5Iax\x84'
         ),
     },
     ENC_NONE: {
@@ -273,10 +270,14 @@ PUTTY_DECRYPTED = {
 
 PUTTY_MAC_KEY = {
     ENC_AES256_CBC: {
-        SSH_ED25519: MacKey(b"y\xfc\x0f5Ea14\xd0\x02\x90u\x11*\x0cah[\xccC#\x916\x83)\xa3\t\xdcK{\xec\x0b"),
-        SSH_RSA_1024: MacKey(b'\xdb\xdbE\xc7\xa3\x97\t[\xbc\x98\xd6\x1e\xf5XMaq%l\x9cb\xe1o7"*\xe9\xcaq\xfb\xbd\x9c'),
+        SSH_ED25519: MacKey(
+            b':\x009\x08\xa4L\xe0\xa9O;\x8b\xa6-O\x9b\xd2\x0e\xe6\xdaM\xd4\x0ctX\x1f\xde\x1e"\xa3\xe27\xe6'
+        ),
+        SSH_RSA_1024: MacKey(
+            b"\x8ez\xe5\x1f\x9c\xa4\xf8\xbb\x08\xcfro\xfc\x8e\x14\xf8u]\xd3\x9a\xdd\xd8\xd3\x1eJ\xb1\xbe\x93\xfc\xba\x9a\xc1"
+        ),
         SSH_ED448: MacKey(
-            b"\xaa\xf6\xa7\x84\xf8@\xe2\x0e\xfc\x99\xef\x13#\xc6\xd2+mk\xd2#\x06\xbc\xf3\xf7\x89\xa8\x7f\x17\xd45#n"
+            b"h}\x92A\xab;(&a\x10\xa5\xe9\xde\x11\xf7\x92\x9d\x88\xa4 *k\x93\xa2=\xd7\x80\x8e\x17\x9d\xccE"
         ),
     },
     ENC_NONE: {
@@ -289,13 +290,13 @@ PUTTY_MAC_KEY = {
 PUTTY_MAC = {
     ENC_AES256_CBC: {
         SSH_ED25519: Mac(
-            private_mac=b"\x17\xd9\xe4\xca\xc8b4\x00\xc5\xa2\x92'\x120\xd9\x1c\xdc\x18\xbc-\xd6\x12\x05\x04\x0cPT9\xbf\x8fl\xdc"
+            private_mac=b"}h\xef\xb8\xce\x10\xc7xz\xd4\xdc\x97=\xab\xb5#;!\xd2\x06\x92\xbe\xfb'\x8fn\xe8\x9e>\x13N\xef"
         ),
         SSH_RSA_1024: Mac(
-            private_mac=b"p\xe0\xbc\xe9P\xb3\x87\xbb\x949\x89\xe9\xbc}s\xe974\xe9\xf8\xf0r\xbe\xa5\xf8\x87\xf6\x85z\x1e\xa2\xe5"
+            private_mac=b"\xe17<\xd5\r\xec\xfcoY\x170\xbbB\xcf\xae\xd1\xe6\x91\xd2C\xc4\x02eE)|\x89\x0e4\x94'\x14"
         ),
         SSH_ED448: Mac(
-            private_mac=b"\x16\xe60\x05%\x0f\x97\x07\xee\xa0\xc5\x93\x16^\x7f\x90!)\xf7K4\x1f\xfa\xa9z\xf1H\xa4\xf4\x15:\xe9"
+            private_mac=b"\xad\xf1?\x15\xb4\xf9\x8fV}N\xd9\xbd9\x88\x10\xb4GN\x01\xf2\x82h\xe7z\xd2\xefZcP\x90{\xec"
         ),
     },
     ENC_NONE: {
@@ -313,72 +314,78 @@ PUTTY_MAC = {
 
 
 class PUTTY_DECRYPTION_PARAMS_DICT(TypedDict):
-    aes256_cbc: dict[KEY_NAMES_T, DecryptionParams_AES256_CBC]
-    none: dict[KEY_NAMES_T, DecryptionParams_NONE]
+    aes256_cbc: dict[KEY_NAMES_T, Encryption_AES256_CBC_Params]
+    none: dict[KEY_NAMES_T, Encryption_NONE_Params]
 
 
 PUTTY_DECRYPTION_PARAMS: PUTTY_DECRYPTION_PARAMS_DICT = {
     ENC_AES256_CBC: {
-        SSH_ED25519: DecryptionParams_AES256_CBC(
-            key_derivation=ArgonID.ID,
-            argon2_memory=MemoryCost(value=8192),
-            argon2_passes=TimeCost(value=21),
-            argon2_parallelism=Parallelism(value=1),
-            argon2_salt=Salt(value=b"\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10"),
+        SSH_ED25519: Encryption_AES256_CBC_Params(
+            argon2_params=Argon2Params(
+                type=ArgonID.ID,
+                memory_cost=MemoryCost(8192),
+                time_cost=TimeCost(21),
+                parallelism=Parallelism(1),
+                salt=Salt(b"\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10"),
+            ),
         ),
-        SSH_RSA_1024: DecryptionParams_AES256_CBC(
-            key_derivation=ArgonID.ID,
-            argon2_memory=MemoryCost(value=8192),
-            argon2_passes=TimeCost(value=21),
-            argon2_parallelism=Parallelism(value=1),
-            argon2_salt=Salt(value=b"\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10"),
+        SSH_RSA_1024: Encryption_AES256_CBC_Params(
+            argon2_params=Argon2Params(
+                type=ArgonID.ID,
+                memory_cost=MemoryCost(8192),
+                time_cost=TimeCost(21),
+                parallelism=Parallelism(1),
+                salt=Salt(b"\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10"),
+            ),
         ),
-        SSH_ED448: DecryptionParams_AES256_CBC(
-            key_derivation=ArgonID.ID,
-            argon2_memory=MemoryCost(value=8192),
-            argon2_passes=TimeCost(value=21),
-            argon2_parallelism=Parallelism(value=1),
-            argon2_salt=Salt(value=b"\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10"),
+        SSH_ED448: Encryption_AES256_CBC_Params(
+            argon2_params=Argon2Params(
+                type=ArgonID.ID,
+                memory_cost=MemoryCost(8192),
+                time_cost=TimeCost(21),
+                parallelism=Parallelism(1),
+                salt=Salt(b"\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10"),
+            ),
         ),
     },
     ENC_NONE: {
-        SSH_ED25519: DecryptionParams_NONE(),
-        SSH_RSA_1024: DecryptionParams_NONE(),
-        SSH_ED448: DecryptionParams_NONE(),
+        SSH_ED25519: Encryption_NONE_Params(),
+        SSH_RSA_1024: Encryption_NONE_Params(),
+        SSH_ED448: Encryption_NONE_Params(),
     },
 }
 
 
 class PUTTY_ENCRYPTION_PARAMS_DICT(TypedDict):
-    aes256_cbc: dict[KEY_NAMES_T, EncryptionParams_AES256_CBC]
-    none: dict[KEY_NAMES_T, EncryptionParams_NONE]
+    aes256_cbc: dict[KEY_NAMES_T, Encryption_AES256_CBC]
+    none: dict[KEY_NAMES_T, Encryption_NONE]
 
 
 PUTTY_ENCRYPTION_PARAMS: PUTTY_ENCRYPTION_PARAMS_DICT = {
     ENC_AES256_CBC: {
-        SSH_ED25519: EncryptionParams_AES256_CBC(
+        SSH_ED25519: Encryption_AES256_CBC(
             key_derivation=ArgonID.ID,
-            argon2_memory=MemoryCost(value=8192),
-            argon2_passes=TimeCost(value=21),
-            argon2_parallelism=Parallelism(value=1),
+            argon2_memory=MemoryCost(8192),
+            argon2_passes=TimeCost(21),
+            argon2_parallelism=Parallelism(1),
         ),
-        SSH_RSA_1024: EncryptionParams_AES256_CBC(
+        SSH_RSA_1024: Encryption_AES256_CBC(
             key_derivation=ArgonID.ID,
-            argon2_memory=MemoryCost(value=8192),
-            argon2_passes=TimeCost(value=21),
-            argon2_parallelism=Parallelism(value=1),
+            argon2_memory=MemoryCost(8192),
+            argon2_passes=TimeCost(21),
+            argon2_parallelism=Parallelism(1),
         ),
-        SSH_ED448: EncryptionParams_AES256_CBC(
+        SSH_ED448: Encryption_AES256_CBC(
             key_derivation=ArgonID.ID,
-            argon2_memory=MemoryCost(value=8192),
-            argon2_passes=TimeCost(value=21),
-            argon2_parallelism=Parallelism(value=1),
+            argon2_memory=MemoryCost(8192),
+            argon2_passes=TimeCost(21),
+            argon2_parallelism=Parallelism(1),
         ),
     },
     ENC_NONE: {
-        SSH_ED25519: EncryptionParams_NONE(),
-        SSH_RSA_1024: EncryptionParams_NONE(),
-        SSH_ED448: EncryptionParams_NONE(),
+        SSH_ED25519: Encryption_NONE(),
+        SSH_RSA_1024: Encryption_NONE(),
+        SSH_ED448: Encryption_NONE(),
     },
 }
 
@@ -389,54 +396,60 @@ PUTTY_FILE_V3 = {
             key_type="ssh-ed25519",
             comment="RFC8032 7.1 Test Vector 1",
             public_lines=b"\x00\x00\x00\x0bssh-ed25519\x00\x00\x00 \xd7Z\x98\x01\x82\xb1\n\xb7\xd5K\xfe\xd3\xc9d\x07:\x0e\xe1r\xf3\xda\xa6#%\xaf\x02\x1ah\xf7\x07Q\x1a",
-            decryption_params=DecryptionParams_AES256_CBC(
-                key_derivation=ArgonID.ID,
-                argon2_memory=MemoryCost(value=8192),
-                argon2_passes=TimeCost(value=21),
-                argon2_parallelism=Parallelism(value=1),
-                argon2_salt=Salt(value=b"\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10"),
+            decryption_params=Encryption_AES256_CBC_Params(
+                argon2_params=Argon2Params(
+                    type=ArgonID.ID,
+                    memory_cost=MemoryCost(8192),
+                    time_cost=TimeCost(21),
+                    parallelism=Parallelism(1),
+                    salt=Salt(b"\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10"),
+                ),
             ),
             private_lines=EncryptedBytes(
-                value=b"^\xff]x\x97\x06`3\x84 \xaf\x07\x94{q\xff!\x1f3v\x8e\x7f\\\xad\xaaV\xff\r\xb7\xb1\x105\xc2Y4\x1c#d\xe82\xedq?z/\x0c\xe7\x84"
+                value=b"\xdcI\x85e\xdb)\xe6Q\xf7o\x938h\x7f\xa4\xc3\x8d|\xc9\x82\xc8\xdf\x8eh\xb0}\xa0\x83\xd8\x92\xde\xf6-\xdcD\xd7\t\xbb\xd8K\xf5}9\xa1\x98\x99\xce\xcc"
             ),
             mac=Mac(
-                private_mac=b"\x17\xd9\xe4\xca\xc8b4\x00\xc5\xa2\x92'\x120\xd9\x1c\xdc\x18\xbc-\xd6\x12\x05\x04\x0cPT9\xbf\x8fl\xdc"
+                private_mac=b"}h\xef\xb8\xce\x10\xc7xz\xd4\xdc\x97=\xab\xb5#;!\xd2\x06\x92\xbe\xfb'\x8fn\xe8\x9e>\x13N\xef"
             ),
         ),
         SSH_RSA_1024: PuttyFileV3(
             key_type="ssh-rsa",
             comment="testRSA1024",
             public_lines=b'\x00\x00\x00\x07ssh-rsa\x00\x00\x00\x03\x01\x00\x01\x00\x00\x00\x81\x00\xb0\xd1\x83R\xa8\x8fS\xd5QoF\xc2\x0ez6}}\xe8\x8a\xcfT\xa0\x19\xf6\xde\xf5z\xb9\xb4L\xed\xdb"B\xb1\xbc\xa0\xfb\x1b\\\xb8+06\x17jc\x905d\xde\xc6\xebA\xdb/\x8f\xc7\x87\xf4\xe5.\x11I\xe33GW)s\xf6`\xc3\xc7|\xa9\xe0\x82\x1c+i[\xe7\xae\x9d}0\xf4\x07\x91\x10\xf4\x8a\xaeo\x8bp-GK)\x00\x81\x7f(f$\x9b\xec\x12\xa2\xb1\x9b\x82xAh\x08\xf8\x1a\xe1\xfc\xf9\xb7w\x8ab?',
-            decryption_params=DecryptionParams_AES256_CBC(
-                key_derivation=ArgonID.ID,
-                argon2_memory=MemoryCost(value=8192),
-                argon2_passes=TimeCost(value=21),
-                argon2_parallelism=Parallelism(value=1),
-                argon2_salt=Salt(value=b"\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10"),
+            decryption_params=Encryption_AES256_CBC_Params(
+                argon2_params=Argon2Params(
+                    type=ArgonID.ID,
+                    memory_cost=MemoryCost(8192),
+                    time_cost=TimeCost(21),
+                    parallelism=Parallelism(1),
+                    salt=Salt(b"\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10"),
+                ),
             ),
             private_lines=EncryptedBytes(
-                value=b"\xa05\xdc\x96\xa8\xdd#\xea\x10\x94$\xc4\x04\xf0=J\x9b^\x10\x05\xa5\x9e\xe4Pjf1\xe1\xdfO&\x0f\x16\x14\x1e\xe9\x03J\xa5\xa9\x01\xa1\x89\xbaJ\x9d\xe3\x06JuP\x82\x13\xfc\xc1s\x14\\\xe4\x84\xef1\xaa\xcd$W\xc5\xbf\xa1\x0c+\xaf\x17\xca\xb5W\x07h1\xae\x83\xaa\t\xf0\xa4\xb9\xec\x1c\xb3B+\x0e\xaa\x813(wi\xee\xac@\x86E\x8b\xdb6~;r\x06N\xd7z\t%\x98S\xcc!\xe5\x80U\x0c\xa3\xf2w\x9c\xa2\xcf\xa4`\xb5>Z^>Pld\xac\x1a\x181\xe3W\xa7;\x10tb\xb5\xd2\xd8\xdfu\xda)\xa96\x02\xce7\x89u;]\x8dm\x8b\xd7S\xad\xff\x16\xc5\x87pw\\\x1dw8i'\xb4\xed\xc1\x0808\xd9_|r\xf4\xc3U\x91\xbdD&\xa9\xac\xb3\x13\xb3\xa9\x84\xafS\x9d\xf9\xdct\xe1\xd6\xaa\x12Ql\xeaWxv\xa6\xcf#\xc6~\xb56/\xe1\x07\x14\xd4\xf8\x1d\xc0\xcf\xd7\xf7\x00\x90\xfd.8g\xd6g\x91\x10\x04\xf8\xec\xacm\xddD_\xb4\xcb\xce\xa8m]\xe5\xcf\x11\xe7\xd5i\x9b\xc7Ai\xc4\xaf\x90\xf3\xb1\x87\xff\xdeP\xf8\x88\xcd\x0f\xc9z\x0b\xc7o\x92\x97\xcdw\xaf\x10\xaf\xd2\xc5\x06)\xd7\xa2\xe4DB\xdb\xd7\x1b\xe8\x00kdt\x95\x81\xcd\x855\x1b\x10@7E\x82\x0b\xeb;\x96\x9e\x19\xb9\t\x82\xaf4H\x95:\x821=%\xdb49<\x0b"
+                value=b"M\x8e\xec!\x0f\x14\xbfO\xb6\xad\xf1'T\xdf\xc30\x83\xba\xaf0\xe5\xd5K\x1c\x80\xd66\xe9\x12B\xef\xce\xd4\xcdhe\xdd\x9d\\}\xaa\xca\x9cr\x90_|\x10n\xcf\xbdb\xb3\x01V\x86\x08\x15_\x94)\x88\x01\xf0lOu\x1d\xb2\x9dq<\x80\xa5 \rX\xe4\x81\xa6q}\xbc\x14\xb9[Z\xd6\x14\x1d.I\xfc\x9b\xfc\x9b\xeaM\xc9\xf0G\xdc\xe0\x91F\xb2\xb4\xe4\xbdS\xc6j\r-<\xc3\xbc\x97\xc1\xbd\xf9 \xe0\x0197\xb7=V\xbdQ\xe8\xf0\x94\xef\xb3h\x86\x86xL\x97\xe6?\xf4+\x18\x96_\x7f\xbe\x9d\x94j\x1c\x9c\xb9\x97\x01\xbb\xf1k\xf6\xdd\x8dQZ\xab\xc93\xab\x96|\x13'1\x10m\xe2\xda<{>\xf5~\xfa\x94l\xe0{O\xd1\xe0\xb1\xdc \x11\xb5~\xde\x14\xc1\xfb\x1c|\xa3A-)\xdcN#\xb0\x1eq\xd4\xf7\xa1\xd8:/\xb5\xf2\xe0\x06\xc2#p\"i\xf2\xf5\xe0\xf6\xf2\xc0\xed \x15\"<\xcf\x10-\x91\x8dmj\x14\x89\xb9\x04\x0bO\xac\x95\xbf\xed\x96\x14\x9eT?\xcfL\x03\xf40\xa0v\xac(\xe3\xecJ\x9c\x98h\xcbB\xbb\x8a-\xcf\xb5\xd5o\xeeQ\x80\xa1\x8c\xf2\x13\xad\xcfs_\xf7f;\x86\xd6\xb8\xb9\xc50\xfaG\xa4\n%\xeb\xe7|t\x0b\xd9\xbb\x8d\xfa>\x8b\x84y\x82\xf67t\x82\xb4iU\xf74\xa0\xca\xfc\xf02j\xb1\xc7\xd6\xcbG\xc4\xbf\x11>U\xfd"
             ),
             mac=Mac(
-                private_mac=b"p\xe0\xbc\xe9P\xb3\x87\xbb\x949\x89\xe9\xbc}s\xe974\xe9\xf8\xf0r\xbe\xa5\xf8\x87\xf6\x85z\x1e\xa2\xe5"
+                private_mac=b"\xe17<\xd5\r\xec\xfcoY\x170\xbbB\xcf\xae\xd1\xe6\x91\xd2C\xc4\x02eE)|\x89\x0e4\x94'\x14"
             ),
         ),
         SSH_ED448: PuttyFileV3(
             key_type="ssh-ed448",
             comment="RFC8032 7.4 Test Vector 1",
             public_lines=b"\x00\x00\x00\tssh-ed448\x00\x00\x009_\xd7D\x9bY\xb4a\xfd,\xe7\x87\xecaj\xd4j\x1d\xa14$\x85\xa7\x0e\x1f\x8a\x0e\xa7]\x80\xe9gx\xed\xf1$v\x9bF\xc7\x06\x1b\xd6x=\xf1\xe5\x0fl\xd1\xfa\x1a\xbe\xaf\xe8%a\x80",
-            decryption_params=DecryptionParams_AES256_CBC(
-                key_derivation=ArgonID.ID,
-                argon2_memory=MemoryCost(value=8192),
-                argon2_passes=TimeCost(value=21),
-                argon2_parallelism=Parallelism(value=1),
-                argon2_salt=Salt(value=b"\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10"),
+            decryption_params=Encryption_AES256_CBC_Params(
+                argon2_params=Argon2Params(
+                    type=ArgonID.ID,
+                    memory_cost=MemoryCost(8192),
+                    time_cost=TimeCost(21),
+                    parallelism=Parallelism(1),
+                    salt=Salt(b"\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10"),
+                ),
             ),
             private_lines=EncryptedBytes(
-                value=b'\x82Yin\x06c\x96\x93da\x86\x1a\xa7\xbb\xfbO\x89xC\xc2>\xbf\xba\xa3\xc0\xea\xe2\xf1\x8d\x01.\x15\xf0Yy\xc8\xdcc\xba\xfd\xb7\x1d\x9e\xd9\xbe0T9u"\x91A\xba5\x98\xd4~\x9b:\xb9^\x80Zl'
+                value=b'\xef\x1aOK\xb8\xea"#\xbf!\xa4\x03\x14e\x98\x8dqZ\x1d/\xe0\xcd\xcb\xe4g"%\x12\xa9\xc8]\x13\x8f\xf5\xf9rl\x81\xd2\xe7vV\x85>D\xfbp\x06\xee\xd8\xeb\t\x19bnm\xc5?\xe5\xd5Iax\x84'
             ),
             mac=Mac(
-                private_mac=b"\x16\xe60\x05%\x0f\x97\x07\xee\xa0\xc5\x93\x16^\x7f\x90!)\xf7K4\x1f\xfa\xa9z\xf1H\xa4\xf4\x15:\xe9"
+                private_mac=b"\xad\xf1?\x15\xb4\xf9\x8fV}N\xd9\xbd9\x88\x10\xb4GN\x01\xf2\x82h\xe7z\xd2\xefZcP\x90{\xec"
             ),
         ),
     },
@@ -445,7 +458,7 @@ PUTTY_FILE_V3 = {
             key_type="ssh-ed25519",
             comment="RFC8032 7.1 Test Vector 1",
             public_lines=b"\x00\x00\x00\x0bssh-ed25519\x00\x00\x00 \xd7Z\x98\x01\x82\xb1\n\xb7\xd5K\xfe\xd3\xc9d\x07:\x0e\xe1r\xf3\xda\xa6#%\xaf\x02\x1ah\xf7\x07Q\x1a",
-            decryption_params=DecryptionParams_NONE(),
+            decryption_params=Encryption_NONE_Params(),
             private_lines=EncryptedBytes(
                 value=b"\x00\x00\x00 \x9da\xb1\x9d\xef\xfdZ`\xba\x84J\xf4\x92\xec,\xc4DI\xc5i{2i\x19p;\xac\x03\x1c\xae\x7f`"
             ),
@@ -457,7 +470,7 @@ PUTTY_FILE_V3 = {
             key_type="ssh-rsa",
             comment="testRSA1024",
             public_lines=b'\x00\x00\x00\x07ssh-rsa\x00\x00\x00\x03\x01\x00\x01\x00\x00\x00\x81\x00\xb0\xd1\x83R\xa8\x8fS\xd5QoF\xc2\x0ez6}}\xe8\x8a\xcfT\xa0\x19\xf6\xde\xf5z\xb9\xb4L\xed\xdb"B\xb1\xbc\xa0\xfb\x1b\\\xb8+06\x17jc\x905d\xde\xc6\xebA\xdb/\x8f\xc7\x87\xf4\xe5.\x11I\xe33GW)s\xf6`\xc3\xc7|\xa9\xe0\x82\x1c+i[\xe7\xae\x9d}0\xf4\x07\x91\x10\xf4\x8a\xaeo\x8bp-GK)\x00\x81\x7f(f$\x9b\xec\x12\xa2\xb1\x9b\x82xAh\x08\xf8\x1a\xe1\xfc\xf9\xb7w\x8ab?',
-            decryption_params=DecryptionParams_NONE(),
+            decryption_params=Encryption_NONE_Params(),
             private_lines=EncryptedBytes(
                 value=b"\x00\x00\x00\x80H.\x9f\x8f\xa4\xe4-\xf3\ru\x81\xcbB\xa1\xbd\x90\xe9O\x7f+8~\xcbZ\xae\x96C\xed\x7f\x9fP\x12\x7f\x1f\xfe\xf2\xe4<\xded\xb1\x82`\x02\x14\xf9\x07\x80\x1dk\xfaM\xf6HB4^[\xb42\xd3DE%\xd80\x16T\xc5D+\n^\x11\xb9\xc7\xe2\x01\xfa2\xf4\x1a\xba\xf4\xf0\xa6\xe0<\xf0\xe0\xcb\x82f\xc6*\xd1\x1d\x95mS\xc9FnH\x99_\xea&\x0c\x856\xf0A\xcb5b\xfa\xacQ\x1cMf\xa8\xfe\xd1\x11\xb2\x91\x00\x00\x00A\x00\xe9\xd8nM\xc3J\x98Z~\xc7ZoT\xa7\\\xe4Q9\xe4R@\xb3\x86\xabq\x1d\xb7\x91\xbc\xd9\x87\x18\xa1;\xaf!\x8c$I6Fh\x07V\xcbP\xa6\xcb\xee\x15\x8e%!D\x99\x120\x1c\rAI\x11\x18E\x00\x00\x00A\x00\xc1\x91\xfa;U\x0b9\x1a|\xb0r\x83v'r\x95\xe6\x1ceO\x0b\xef/X\xdc\xe5\xc9b\xa1\x0b}\xd7_\x06\x01Te\xe5Pv\xe4f&>\xeb\xca\xed \xd2\xeb\xab91>\x8b\xc5g2\x0f\xe8\xb2\xdcb\xb3\x00\x00\x00A\x00\xb9\x9d\x7f\x8fMME_\x1f\xbaF-\x99\n.\x84\x8cB\x8c\x1e\xbe\xe0\x1d\xc0\x01\x84\xc8\xa7e\x83\xad7\x9fi\xad\xafTuT0\xf6<BS\xd1\xbbx\xcc\x9b\xd22d4\x00\x80\xb8L\x1a\x91}\xe0\x8bn\xdb"
             ),
@@ -469,7 +482,7 @@ PUTTY_FILE_V3 = {
             key_type="ssh-ed448",
             comment="RFC8032 7.4 Test Vector 1",
             public_lines=b"\x00\x00\x00\tssh-ed448\x00\x00\x009_\xd7D\x9bY\xb4a\xfd,\xe7\x87\xecaj\xd4j\x1d\xa14$\x85\xa7\x0e\x1f\x8a\x0e\xa7]\x80\xe9gx\xed\xf1$v\x9bF\xc7\x06\x1b\xd6x=\xf1\xe5\x0fl\xd1\xfa\x1a\xbe\xaf\xe8%a\x80",
-            decryption_params=DecryptionParams_NONE(),
+            decryption_params=Encryption_NONE_Params(),
             private_lines=EncryptedBytes(
                 value=b"\x00\x00\x009l\x82\xa5b\xcb\x80\x8d\x10\xd62\xbe\x89\xc8Q>\xbfl\x92\x9f4\xdd\xfa\x8c\x9fc\xc9\x96\x0e\xf6\xe3H\xa3R\x8c\x8a?\xcc/\x04N9\xa3\xfc[\x94I/\x8f\x03.uI\xa2\x00\x98\xf9["
             ),
@@ -494,8 +507,8 @@ Argon2-Passes: 21
 Argon2-Parallelism: 1
 Argon2-Salt: 0102030405060708090a0b0c0d0e0f10
 Private-Lines: 1
-Xv9deJcGYDOEIK8HlHtx/yEfM3aOf1ytqlb/DbexEDXCWTQcI2ToMu1xP3ovDOeE
-Private-MAC: 17d9e4cac8623400c5a292271230d91cdc18bc2dd61205040c505439bf8f6cdc
+3EmFZdsp5lH3b5M4aH+kw418yYLI345osH2gg9iS3vYt3ETXCbvYS/V9OaGYmc7M
+Private-MAC: 7d68efb8ce10c7787ad4dc973dabb5233b21d20692befb278f6ee89e3e134eef
 """,
         SSH_RSA_1024: b"""PuTTY-User-Key-File-3: ssh-rsa
 Encryption: aes256-cbc
@@ -511,15 +524,15 @@ Argon2-Passes: 21
 Argon2-Parallelism: 1
 Argon2-Salt: 0102030405060708090a0b0c0d0e0f10
 Private-Lines: 8
-oDXclqjdI+oQlCTEBPA9SpteEAWlnuRQamYx4d9PJg8WFB7pA0qlqQGhibpKneMG
-SnVQghP8wXMUXOSE7zGqzSRXxb+hDCuvF8q1VwdoMa6DqgnwpLnsHLNCKw6qgTMo
-d2nurECGRYvbNn47cgZO13oJJZhTzCHlgFUMo/J3nKLPpGC1PlpePlBsZKwaGDHj
-V6c7EHRitdLY33XaKak2As43iXU7XY1ti9dTrf8WxYdwd1wddzhpJ7TtwQgwONlf
-fHL0w1WRvUQmqayzE7OphK9TnfncdOHWqhJRbOpXeHamzyPGfrU2L+EHFNT4HcDP
-1/cAkP0uOGfWZ5EQBPjsrG3dRF+0y86obV3lzxHn1Wmbx0FpxK+Q87GH/95Q+IjN
-D8l6C8dvkpfNd68Qr9LFBinXouREQtvXG+gAa2R0lYHNhTUbEEA3RYIL6zuWnhm5
-CYKvNEiVOoIxPSXbNDk8Cw==
-Private-MAC: 70e0bce950b387bb943989e9bc7d73e93734e9f8f072bea5f887f6857a1ea2e5
+TY7sIQ8Uv0+2rfEnVN/DMIO6rzDl1UscgNY26RJC787UzWhl3Z1cfarKnHKQX3wQ
+bs+9YrMBVoYIFV+UKYgB8GxPdR2ynXE8gKUgDVjkgaZxfbwUuVta1hQdLkn8m/yb
+6k3J8Efc4JFGsrTkvVPGag0tPMO8l8G9+SDgATk3tz1WvVHo8JTvs2iGhnhMl+Y/
+9CsYll9/vp2UahycuZcBu/Fr9t2NUVqryTOrlnwTJzEQbeLaPHs+9X76lGzge0/R
+4LHcIBG1ft4UwfscfKNBLSncTiOwHnHU96HYOi+18uAGwiNwImny9eD28sDtIBUi
+PM8QLZGNbWoUibkEC0+slb/tlhSeVD/PTAP0MKB2rCjj7EqcmGjLQruKLc+11W/u
+UYChjPITrc9zX/dmO4bWuLnFMPpHpAol6+d8dAvZu436PouEeYL2N3SCtGlV9zSg
+yvzwMmqxx9bLR8S/ET5V/Q==
+Private-MAC: e1373cd50decfc6f591730bb42cfaed1e691d243c4026545297c890e34942714
 """,
         SSH_ED448: b"""PuTTY-User-Key-File-3: ssh-ed448
 Encryption: aes256-cbc
@@ -533,9 +546,9 @@ Argon2-Passes: 21
 Argon2-Parallelism: 1
 Argon2-Salt: 0102030405060708090a0b0c0d0e0f10
 Private-Lines: 2
-gllpbgZjlpNkYYYap7v7T4l4Q8I+v7qjwOri8Y0BLhXwWXnI3GO6/bcdntm+MFQ5
-dSKRQbo1mNR+mzq5XoBabA==
-Private-MAC: 16e63005250f9707eea0c593165e7f902129f74b341ffaa97af148a4f4153ae9
+7xpPS7jqIiO/IaQDFGWYjXFaHS/gzcvkZyIlEqnIXROP9flybIHS53ZWhT5E+3AG
+7tjrCRlibm3FP+XVSWF4hA==
+Private-MAC: adf13f15b4f98f567d4ed9bd398810b4474e01f28268e77ad2ef5a6350907bec
 """,
     },
     ENC_NONE: {

@@ -34,18 +34,21 @@ def test_derive_key():
 
     passphrase = SecretBytes(b"correct horse battery staple")
 
-    params = enc.DeriveAesKeyParams(
-        argon2_type=argon.ArgonID.ID,
-        argon2_memory_cost=MemoryCost(8192),
-        argon2_time_cost=TimeCost(21),
-        argon2_parallelism=Parallelism(1),
-        argon2_salt=argon.Salt(b"\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10"),
-        aes_iv_length=16,
-        aes_cipher_length=32,
-        mac_length=32,
+    argon_params = enc.Argon2Params(
+        type=argon.ArgonID.ID,
+        memory_cost=MemoryCost(8192),
+        time_cost=TimeCost(21),
+        parallelism=Parallelism(1),
+        salt=argon.Salt(b"\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10"),
+    )
+    aes_params = enc.AESParams(
+        block_size=16,
+        cipher_iv_length=16,
+        cipher_key_length=32,
+        mac_key_length=32,
     )
 
-    got_cipher, got_iv, got_mac_key = enc.derive_aes_key(params, passphrase)
+    got_cipher, got_iv, got_mac_key = enc.derive_aes_key(argon_params, aes_params, passphrase)
     assert got_cipher.get_secret_value() == want_cipher.get_secret_value(), "Cipher key mismatch"
     assert got_iv.get_secret_value() == want_iv.get_secret_value(), "IV mismatch"
     assert got_mac_key.get_secret_value() == want_mac_key.get_secret_value(), "MAC key mismatch"
@@ -65,7 +68,9 @@ def test_aes_encrypt(no_randomness: None, enc_name: PUTTY_ENC_NAMES_T, key_name:
     want_params = PUTTY_DECRYPTION_PARAMS[enc_name][key_name]
     want_mac_key = PUTTY_MAC_KEY[enc_name][key_name]
 
-    got_encrypted, got_params, got_mac_key = params.encrypt(decrypted, passphrase)
+    got_params = params.generate_params()
+
+    got_encrypted, got_mac_key = got_params.encrypt(decrypted, passphrase)
 
     assert got_encrypted == want_encrypted, "Encrypted data mismatch"
     assert got_params == want_params, "Params mismatch"
@@ -116,34 +121,8 @@ def test_encrypt_invalid_passphrase(enc_name: PUTTY_ENC_NAMES_T, key_name: KEY_N
     passphrase = INVALID_PASSPHRASE[enc_name]
 
     with pytest.raises(ValueError):
-        params.encrypt(decrypted, passphrase)
+        params.generate_params().encrypt(decrypted, passphrase)
 
 
 def test_aes_padding(no_randomness: None):
     assert enc.add_padding(b"abc", 16) == b"abc" + b"\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r"
-
-
-@pytest.mark.skipif(argon2 is None, reason="argon2-cffi is not installed")
-def test_gen_params(no_randbytes: None):
-    want = enc.DeriveAesKeyParams(
-        argon2_type=argon.ArgonID.ID,
-        argon2_memory_cost=MemoryCost(65536),
-        argon2_time_cost=TimeCost(3),
-        argon2_parallelism=Parallelism(4),
-        argon2_salt=argon.Salt(b"\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10"),
-        aes_cipher_length=32,
-        aes_iv_length=16,
-        mac_length=32,
-    )
-    got = enc.DeriveAesKeyParams.create(
-        argon2_type=argon.ArgonID.ID,
-        argon2_memory_cost=MemoryCost(65536),
-        argon2_time_cost=TimeCost(3),
-        argon2_parallelism=Parallelism(4),
-        argon2_salt_length=16,
-        aes_cipher_length=32,
-        aes_iv_length=16,
-        mac_length=32,
-    )
-
-    assert got == want

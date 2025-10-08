@@ -8,8 +8,8 @@ import ssh_proto_types as spt
 from ssh_key_mgr.putty import ppk
 from ssh_key_mgr.putty.checksum import Mac, MacData
 from ssh_key_mgr.putty.encryption import (
-    DecryptionParams,
     EncryptedBytes,
+    Encryption,
     EncryptionParams,
 )
 from ssh_key_mgr.putty.keys import (
@@ -89,21 +89,22 @@ class PuttyFileV3(PuttyFile):
     file_version: ClassVar[PuttyFormatVersion] = PuttyFormatVersion.V3
     key_type: str
     comment: str
-    decryption_params: DecryptionParams
+    decryption_params: EncryptionParams
     public_lines: bytes
     private_lines: EncryptedBytes
     mac: Mac
 
     @classmethod
-    def encrypt(cls, key: PuttyKey, encryption_params: EncryptionParams, passphrase: SecretBytes | None) -> Self:
+    def encrypt(cls, key: PuttyKey, encryption: Encryption, passphrase: SecretBytes | None) -> Self:
+        encryption_params = encryption.generate_params()
         private_wire = bytes(key.private)
         private_padded_wire = encryption_params.add_padding(private_wire)
-        private_lines, decryption_params, mac_key = encryption_params.encrypt(private_padded_wire, passphrase)
+        private_lines, mac_key = encryption_params.encrypt(private_padded_wire, passphrase)
         public_wire = bytes(key.public)
         mac = Mac.generate(
             data=MacData(
                 algorithm=key.key_type,
-                encryption=decryption_params.encryption_type,
+                encryption=encryption_params.encryption_type,
                 comment=key.comment,
                 public_wire=public_wire,
                 private_padded_wire=private_padded_wire,
@@ -114,7 +115,7 @@ class PuttyFileV3(PuttyFile):
             key_type=key.key_type,
             comment=key.comment,
             public_lines=public_wire,
-            decryption_params=decryption_params,
+            decryption_params=encryption_params,
             private_lines=private_lines,
             mac=mac,
         )
@@ -161,7 +162,7 @@ class PuttyFileV3(PuttyFile):
         encryption = stream.read_named_str("Encryption")
         comment = stream.read_named_str("Comment")
         public_lines = stream.read_named_bytes("Public-Lines")
-        encryption_params = DecryptionParams.unmarshal_ppk_part(encryption, stream)
+        encryption_params = EncryptionParams.unmarshal_ppk_part(encryption, stream)
         private_lines = EncryptedBytes(stream.read_named_bytes("Private-Lines"))
         mac = Mac(private_mac=stream.read_named_hexbytes("Private-MAC"))
 

@@ -42,9 +42,9 @@ def convert_key(src: pathlib.Path, dst: pathlib.Path | None = None):
         keypair = KeyPair.from_openssh(openssh_key)
         putty_key = keypair.to_putty()
         if passphrase is None:
-            params = putty.EncryptionParams_NONE()
+            params = putty.Encryption_NONE()
         else:
-            params = putty.EncryptionParams_AES256_CBC()
+            params = putty.Encryption_AES256_CBC()
         putty_file = putty.PuttyFileV3.encrypt(putty_key, params, passphrase)
         putty_ppk = ppk.marshal(putty_file)
         dst.write_bytes(putty_ppk)
