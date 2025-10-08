@@ -128,6 +128,7 @@ ENCRYPTION_AES256_CBC = "aes256-cbc"
 class Encryption_AES256_CBC(Encryption):
     encryption_type: ClassVar[str] = ENCRYPTION_AES256_CBC
     salt_size: ClassVar[Literal[16]] = 16
+
     key_derivation: ArgonID = ArgonID.ID
     argon2_memory: MemoryCost = MemoryCost(8192)
     argon2_passes: TimeCost = TimeCost(21)
