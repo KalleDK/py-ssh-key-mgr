@@ -1,10 +1,14 @@
+import inspect
+
 import pytest
 
+from ssh_key_mgr.encryption import IV, CipherKey, EncryptedBytes
 from ssh_key_mgr.openssh.encryption import aes
+from tests.conftest import mark_skip_if_cryptodome_missing
 
 pytest.importorskip("bcrypt")
 
-ENCRYPTED = aes.EncryptedBytes(
+ENCRYPTED = EncryptedBytes(
     b"\xceG\x885\xa1\xd1W\xf9\x05e\x15\xa2\xca=\xc11X\xa0\xdbq<\x17\xc7ksP\x93\xe8\xbf"
     + b"\xd5r\xf1\xd1\x94\x1ba\xfb\xab\xcdI\x04\xe7\x86b\x81S\xda\x19\x83\x07l\xadp"
     + b"\x86\xecR\x99\x10\xfa&R7\xc3\xe9D5\xd8\xe0M\x7f\xcfG\xa9\xde\xb4;\x18(\xed"
@@ -36,10 +40,30 @@ DECRYPTED = (
 )
 
 
-IV_KEY = aes.IV(b"K\xe3=0\x96\x1a\xa7\xeaqC\xfb\xa1\x966u\xab")
-CIPHER_KEY = aes.CipherKey(
-    b"y\xeb\x0c\x9f\xe4\xf2W\x8fJ\xc1F\xc2\xec%\xcc\x90~<\x81\xf5\x1d\x8d\x16\xef2H\xc9i$D\x01\xe7"
-)
+IV_KEY = IV(b"K\xe3=0\x96\x1a\xa7\xeaqC\xfb\xa1\x966u\xab")
+CIPHER_KEY = CipherKey(b"y\xeb\x0c\x9f\xe4\xf2W\x8fJ\xc1F\xc2\xec%\xcc\x90~<\x81\xf5\x1d\x8d\x16\xef2H\xc9i$D\x01\xe7")
+
+
+@mark_skip_if_cryptodome_missing
+def test_signature_decrypt():
+    from ssh_key_mgr.openssh.encryption.aes import impl, stub
+
+    got = inspect.signature(impl.decrypt)
+
+    want = inspect.signature(stub.decrypt)
+    assert got.return_annotation == want.return_annotation
+    assert got.parameters == want.parameters
+
+
+@mark_skip_if_cryptodome_missing
+def test_signature_encrypt():
+    from ssh_key_mgr.openssh.encryption.aes import impl, stub
+
+    got = inspect.signature(impl.encrypt)
+
+    want = inspect.signature(stub.encrypt)
+    assert got.return_annotation == want.return_annotation
+    assert got.parameters == want.parameters
 
 
 def test_decrypt():

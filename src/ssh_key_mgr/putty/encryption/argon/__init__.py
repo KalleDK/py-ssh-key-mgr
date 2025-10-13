@@ -11,9 +11,7 @@ else:
         from .impl import hash_passphrase as hash_passphrase
 
     except ImportError:
-
-        def hash_passphrase(params: Argon2Params, hash_size: int, passphrase: SecretBytes) -> bytes:
-            raise ImportError("argon2-cffi is required for Argon2 hashing")
+        from .stub import hash_passphrase as hash_passphrase
 
 
 __all__ = [

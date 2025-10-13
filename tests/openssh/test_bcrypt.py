@@ -1,11 +1,11 @@
 import dataclasses
+import inspect
 
 import pytest
 
 from ssh_key_mgr.encryption import Rounds, Salt, SecretBytes
 from ssh_key_mgr.openssh.encryption.bcrypt import hash_passphrase
-
-pytest.importorskip("bcrypt")
+from tests.conftest import mark_skip_if_bcrypt_missing
 
 
 @dataclasses.dataclass
@@ -48,6 +48,18 @@ hash_passphrase_cases = [
 ]
 
 
+@mark_skip_if_bcrypt_missing
+def test_signature():
+    from ssh_key_mgr.openssh.encryption.bcrypt import impl, stub
+
+    got = inspect.signature(impl.hash_passphrase)
+
+    want = inspect.signature(stub.hash_passphrase)
+    assert got.return_annotation == want.return_annotation
+    assert got.parameters == want.parameters
+
+
+@mark_skip_if_bcrypt_missing
 @pytest.mark.parametrize("case", hash_passphrase_cases)
 def test_hash_passphrase(case: HashPassphraseCase) -> None:
     got = hash_passphrase(case.passphrase, case.hash_len, case.rounds, case.salt)

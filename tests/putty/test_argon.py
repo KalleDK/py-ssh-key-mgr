@@ -1,9 +1,22 @@
+import inspect
+
 import pytest
 
 from ssh_key_mgr.encryption import ArgonID
 from ssh_key_mgr.putty.encryption import argon
-from tests.putty.conftest import mark_skip_if_argon_missing, mark_skip_if_argon_present
+from tests.conftest import mark_skip_if_argon_missing, mark_skip_if_argon_present
 from tests.putty.data import PUTTY_ARGON
+
+
+@mark_skip_if_argon_missing
+def test_signature():
+    from ssh_key_mgr.putty.encryption.argon import impl, stub
+
+    got = inspect.signature(impl.hash_passphrase)
+
+    want = inspect.signature(stub.hash_passphrase)
+    assert got.return_annotation == want.return_annotation
+    assert got.parameters == want.parameters
 
 
 @mark_skip_if_argon_missing

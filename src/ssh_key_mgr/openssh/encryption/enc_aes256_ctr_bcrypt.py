@@ -37,7 +37,7 @@ def derive_aes_key(bcrypt_params: BCryptParams, aes_params: AESParams, passphras
 
 
 def aes_decrypt(
-    encrypted: aes.EncryptedBytes,
+    encrypted: EncryptedBytes,
     bcrypt_params: BCryptParams,
     aes_params: AESParams,
     passphrase: SecretBytes,
@@ -52,7 +52,7 @@ def aes_encrypt(
     bcrypt_params: BCryptParams,
     aes_params: AESParams,
     passphrase: SecretBytes,
-) -> aes.EncryptedBytes:
+) -> EncryptedBytes:
     key, iv = derive_aes_key(bcrypt_params, aes_params, passphrase)
     encrypted = aes.encrypt(decrypted, key, iv)
     return encrypted

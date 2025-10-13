@@ -1,8 +1,32 @@
+import inspect
+
 import pytest
 
 from ssh_key_mgr.putty.encryption import aes
-from tests.putty.conftest import mark_skip_if_crypto_present, mark_skip_if_cryptodome_missing
+from tests.conftest import mark_skip_if_crypto_present, mark_skip_if_cryptodome_missing
 from tests.putty.data import PUTTY_AES
+
+
+@mark_skip_if_cryptodome_missing
+def test_signature_decrypt():
+    from ssh_key_mgr.putty.encryption.aes import impl, stub
+
+    got = inspect.signature(impl.decrypt)
+
+    want = inspect.signature(stub.decrypt)
+    assert got.return_annotation == want.return_annotation
+    assert got.parameters == want.parameters
+
+
+@mark_skip_if_cryptodome_missing
+def test_signature_encrypt():
+    from ssh_key_mgr.putty.encryption.aes import impl, stub
+
+    got = inspect.signature(impl.encrypt)
+
+    want = inspect.signature(stub.encrypt)
+    assert got.return_annotation == want.return_annotation
+    assert got.parameters == want.parameters
 
 
 @mark_skip_if_cryptodome_missing
